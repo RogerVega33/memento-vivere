@@ -138,3 +138,11 @@ Para terminar, pulsa `Ctrl+C` y ejecuta `docker compose stop database`. Si la ap
 | --- | --- |
 | [Arquitectura](docs/architecture.md) | Organización del código y flujo de datos. |
 | [Base de datos](docs/database.md) | Configuración, inicialización, tablas, backups y restauración. |
+
+## Licencia
+
+Copyright 2026 Roger Vega.
+
+Este proyecto se distribuye bajo la [Apache License 2.0](LICENSE). Consulta
+también el archivo de [atribuciones](NOTICE). Las dependencias de terceros
+conservan sus respectivas licencias.

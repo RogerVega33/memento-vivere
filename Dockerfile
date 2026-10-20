@@ -19,6 +19,8 @@ RUN npm ci --omit=dev --no-audit --no-fund
 FROM base AS runtime
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000 TZ=America/Guayaquil
+COPY --chown=node:node LICENSE NOTICE ./
+COPY --chown=node:node src/server/wordlists/README.md ./src/server/wordlists/README.md
 COPY --from=production-dependencies --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/.next ./.next
 COPY --from=build --chown=node:node /app/package.json /app/next.config.mjs /app/server.mjs ./
