@@ -1,0 +1,63 @@
+import { test, expect } from './fixtures';
+import { login, logout, register } from './auth-helpers';
+
+test('the initial opens an accessible account menu and password changes preserve this session', async ({ page, browser, extraHTTPHeaders }) => {
+  test.setTimeout(90000);
+  await page.goto('/');
+  const account = await register(page);
+  const trigger = page.getByRole('button', { name: `Menú de la cuenta de ${account.username}` });
+  await expect(trigger).toHaveText(account.username[0].toUpperCase());
+  await trigger.press('ArrowDown');
+  const menu = page.getByRole('menu', { name: 'Mi cuenta' });
+  await expect(menu).toContainText(account.username);
+  await expect(menu.getByRole('menuitem', { name: 'Cambiar contraseña' })).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(menu.getByRole('menuitem', { name: 'Cerrar sesión' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await trigger.click();
+  await page.getByRole('heading', { name: 'Toda historia tiene una fecha de inicio' }).click();
+  await expect(menu).toHaveCount(0);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await trigger.click();
+  const bounds = await menu.boundingBox();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(375);
+  await menu.getByRole('menuitem', { name: 'Cambiar contraseña' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Cambiar contraseña' });
+  await expect(dialog.getByLabel('Contraseña actual', { exact: true })).toBeFocused();
+  await dialog.getByRole('button', { name: 'Cancelar' }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+
+  const remote = await browser.newContext({ baseURL: new URL(page.url()).origin, extraHTTPHeaders });
+  try {
+    const otherDevice = await remote.newPage();
+    await otherDevice.goto('/');
+    await login(otherDevice, account.username, account.password);
+    await expect(otherDevice.getByRole('heading', { name: 'Toda historia tiene una fecha de inicio' })).toBeVisible();
+    await trigger.click();
+    await menu.getByRole('menuitem', { name: 'Cambiar contraseña' }).click();
+    const updated = account.password + ' nueva';
+    await dialog.getByLabel('Contraseña actual', { exact: true }).fill('incorrecta');
+    await dialog.getByLabel('Nueva contraseña', { exact: true }).fill(updated);
+    await dialog.getByLabel('Confirmar nueva contraseña').fill(updated + ' distinta');
+    await dialog.getByRole('button', { name: 'Guardar contraseña' }).click();
+    await expect(dialog.getByRole('alert')).toHaveText('Las contraseñas no coinciden.');
+    await dialog.getByLabel('Confirmar nueva contraseña').fill(updated);
+    await dialog.getByRole('button', { name: 'Guardar contraseña' }).click();
+    await expect(dialog.getByRole('alert')).toHaveText('La contraseña actual no es correcta.');
+    await dialog.getByLabel('Contraseña actual', { exact: true }).fill(account.password);
+    await dialog.getByRole('button', { name: 'Guardar contraseña' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole('status')).toHaveText('Contraseña actualizada.');
+    expect((await page.request.get('/api/state')).status()).toBe(200);
+    expect((await otherDevice.request.get('/api/state')).status()).toBe(401);
+    await logout(page);
+    await login(page, account.username, account.password);
+    await expect(page.getByRole('alert')).toHaveText('Usuario o contraseña incorrectos.');
+    await login(page, account.username, updated);
+    await expect(page.getByRole('heading', { name: 'Toda historia tiene una fecha de inicio' })).toBeVisible();
+  } finally { await remote.close(); }
+});

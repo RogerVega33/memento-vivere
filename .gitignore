@@ -1,0 +1,31 @@
+# Local configuration and credentials
+.env*
+*.env
+*.env.*
+!.env.example
+.aws/
+.ssh/
+
+# Dependencies and generated output
+node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# Local tools and editors
+.agents/
+.codex/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs and database backups
+*.log
+logs/
+*.dump
+*.backup
+*.sql.gz
