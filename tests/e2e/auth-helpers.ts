@@ -16,9 +16,9 @@ export async function register(page: Page) {
 }
 
 export async function saveWords(page: Page) {
-  await expect(page.getByRole('button', { name: 'Continuar a mi historia' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Continuar', exact: true })).toBeDisabled();
   await page.getByRole('checkbox', { name: 'Ya guardé mi usuario y las ocho palabras en orden.' }).check();
-  await page.getByRole('button', { name: 'Continuar a mi historia' }).click();
+  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
 }
 
 export async function login(page: Page, username: string, password: string) {

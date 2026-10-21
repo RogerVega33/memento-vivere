@@ -44,7 +44,7 @@ export function MementoApp() {
       requests.cancel(); setUser(null); setRecovery(null); setChecking(false);
       currentUserId.current = null;
       setApiUser(null);
-      setNotice('Tu sesión terminó. Inicia sesión de nuevo para volver a tu historia.');
+      setNotice('Tu sesión terminó. Inicia sesión de nuevo.');
     }
     if (typeof BroadcastChannel !== 'undefined') {
       channel.current = new BroadcastChannel('memento-session');
@@ -91,7 +91,7 @@ export function MementoApp() {
     <a href="#main-content" className="skip-link">Saltar al contenido</a>
     <AppHeader user={user} onLogout={user ? () => void logout() : undefined} busy={signingOut} />
     <div id="main-content" tabIndex={-1}>
-      {checking ? <main className="page-width loading-state">{error ? <div className="error" role="alert">{error}<button className="button secondary" onClick={() => void checkSession()}>Reintentar</button></div> : <span role="status">Preparando un lugar para tu historia…</span>}</main>
+      {checking ? <main className="page-width loading-state">{error ? <div className="error" role="alert">{error}<button className="button secondary" onClick={() => void checkSession()}>Reintentar</button></div> : <span role="status">Cargando…</span>}</main>
         : recovery && user ? <RecoveryWords username={user.username} phrase={recovery.phrase} recovered={recovery.recovered} onContinue={() => setRecovery(null)} />
           : <AuthView onAuthenticated={authenticated} notice={notice} />}
     </div>
@@ -121,7 +121,7 @@ function LifeApp({ user, onLogout, signingOut, sessionError }: { user: User; onL
     }
     catch (error) {
       if (request.isCurrent())
-        setError(error instanceof Error ? error.message : 'No se pudo abrir tu historia.');
+        setError(error instanceof Error ? error.message : 'No se pudo cargar el calendario.');
     }
   }, [query, requests]);
   useEffect(() => {
@@ -168,7 +168,7 @@ function LifeApp({ user, onLogout, signingOut, sessionError }: { user: User; onL
     setEditor(null);
     setMonth(monthKey(memory.year, memory.month));
     setRevision(value => value + 1);
-    setToast('Un recuerdo más en tu historia.');
+    setToast('Recuerdo agregado');
     void refresh();
   }
   return (<div className={`app-shell${state?.profile ? ' app-shell--overview' : ''}`}>
@@ -180,7 +180,7 @@ function LifeApp({ user, onLogout, signingOut, sessionError }: { user: User; onL
         {error ? (<div className="error" role="alert">
           {error}
           <button className="button secondary" onClick={() => void refresh()}>Reintentar</button>
-        </div>) : <span role="status">Preparando un lugar para tu historia…</span>}
+        </div>) : <span role="status">Cargando…</span>}
       </main>) : !state.profile ? (<Onboarding today={state.today} onSetup={setState} />) : (<>
         {error && <div className="page-width">
           <p className="error" role="alert">

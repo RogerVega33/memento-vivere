@@ -112,7 +112,7 @@ export function RecoveryWords({ username, phrase, recovered, onContinue }: { use
       <p className="recovery-notice">Solo se muestran esta vez. {recovered && 'Estas palabras reemplazan las anteriores y se han cerrado las sesiones previas. '}Guárdalas en un lugar privado: permiten recuperar tu cuenta.</p>
       <form onSubmit={event => { event.preventDefault(); if (saved) onContinue(); }}>
         <label className="recovery-confirmation"><input type="checkbox" required checked={saved} onChange={event => setSaved(event.target.checked)} /><span>Ya guardé mi usuario y las ocho palabras en orden.</span></label>
-        <button className="button primary full-width" type="submit" disabled={!saved}>Continuar a mi historia</button>
+        <button className="button primary full-width" type="submit" disabled={!saved}>Continuar</button>
       </form>
     </section>
   </main>;
