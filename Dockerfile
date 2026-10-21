@@ -24,6 +24,7 @@ COPY --chown=node:node src/server/wordlists/README.md ./src/server/wordlists/REA
 COPY --from=production-dependencies --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/.next ./.next
 COPY --from=build --chown=node:node /app/package.json /app/next.config.mjs /app/server.mjs ./
+COPY --from=build --chown=node:node /app/scripts/pwa.mjs ./scripts/pwa.mjs
 COPY --from=build --chown=node:node /app/src/server/request-network.mjs ./src/server/request-network.mjs
 COPY --from=build --chown=node:node /app/src/server/logger.mjs ./src/server/logger.mjs
 COPY --from=build --chown=node:node /app/src/server/startup.mjs ./src/server/startup.mjs

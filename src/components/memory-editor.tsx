@@ -174,7 +174,7 @@ export function MemoryEditor({ memory, selectedMonth, birthDate, today, onClose,
         <p id="memory-description-hint" className="field-hint description-hint">
           <span>{description.length}/{LIMITS.descriptionLength}</span>
         </p>
-        <HelpLabel htmlFor="memory-tags" label="Etiquetas" suffix={<span className="optional-label">opcional</span>} hintId="memory-tags-hint" hint={`Sepáralas con comas. Quitaremos los espacios sobrantes y las repetidas. Hasta ${LIMITS.tagsPerMemory} etiquetas de ${LIMITS.tagLength} caracteres.`} />
+        <HelpLabel htmlFor="memory-tags" label="Etiquetas" suffix={<span className="optional-label">opcional</span>} hintId="memory-tags-hint" hint={`Sepáralas con comas. Hasta ${LIMITS.tagsPerMemory} etiquetas de ${LIMITS.tagLength} caracteres.`} />
         <input
           id="memory-tags"
           aria-describedby="memory-tags-hint"

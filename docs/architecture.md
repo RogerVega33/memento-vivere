@@ -27,6 +27,7 @@ Tanto en desarrollo como en Docker, `server.mjs` prepara la base antes de acepta
 | `src/server/images.mjs` y `src/server/*heic.mjs` | Conversión de fotografías a WebP y limpieza de temporales. |
 | `src/instrumentation.ts` y `src/server/logger.mjs` | Logs de arranque, solicitudes y errores. |
 | `server.mjs` | Arranque HTTP, contexto de red y cierre del servidor. |
+| `src/components/pwa/`, `pwa/service-worker.js` y `scripts/pwa.mjs` | Instalación, actualizaciones voluntarias y caché de la interfaz pública versionada al compilar. |
 | `db/001_initial.sql` | Esquema, índices, vista de recuerdos visibles y triggers. |
 | `tests/` | Pruebas de dominio, rutas, repositorios, imágenes e interfaz. |
 

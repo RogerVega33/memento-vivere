@@ -47,6 +47,7 @@ const events = new Set([
 ]);
 const routes = new Set([
   '/', '/api/health', '/api/state', '/api/profile', '/api/memories', '/api/memories/:id', '/api/photos/:id',
+  '/sw.js', '/manifest.webmanifest', '/icon.svg', '/pwa-192.png', '/pwa-512.png', '/pwa-maskable-512.png', '/apple-touch-icon.png',
   '/api/auth/session', '/api/auth/login', '/api/auth/logout', '/api/auth/register', '/api/auth/recover', '/api/auth/password',
 ]);
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']);

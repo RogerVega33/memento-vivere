@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "node server.mjs --dev",
-    "build": "next build",
+    "build": "next build && node scripts/pwa.mjs",
     "start": "node server.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --test --test-isolation=none tests/*.test.mjs",

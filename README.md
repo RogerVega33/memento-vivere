@@ -53,6 +53,7 @@ Memento Vivere es un proyecto independiente inspirado conceptualmente en esta vi
 - **Cambio de contraseña:** cambia la contraseña desde el menú de tu cuenta, conservando la sesión actual y cerrando las demás.
 - **Temas:** elige Claro, Oscuro o Auto y conserva tu preferencia al cambiar de pantalla.
 - **Diseño adaptable:** utiliza la aplicación desde un computador, tableta o teléfono.
+- **PWA instalable:** instala la aplicación desde el navegador.
 - **Datos persistentes:** cuentas, sesiones, recuerdos y fotografías se conservan en PostgreSQL entre reinicios.
 
 ## Instalación
@@ -95,6 +96,12 @@ Dirige el proxy al puerto de la aplicación (`3000` por defecto) y configura est
 Define `TRUSTED_PROXY_IP` en `.env` con la IP exacta desde la que el proxy llega al contenedor. La aplicación solo acepta esas cabeceras desde esa dirección y espera una única IP en `X-Forwarded-For`. Restringe el acceso al puerto de la aplicación para que solo pueda conectarse el proxy.
 
 Inicio de sesión, registro, recuperación y cambio de contraseña comparten un límite de 20 solicitudes cada 15 minutos por IP. Login y recuperación tienen además límites por usuario.
+
+### Aplicación instalable (PWA)
+
+La PWA funciona con la compilación de producción y HTTPS; `localhost` también permite probarla. En navegadores compatibles aparece **Instalar aplicación** en el menú de tu cuenta. En iPhone/iPad usa **Compartir → Añadir a pantalla de inicio**.
+
+Iniciar sesión y consultar o modificar recuerdos y fotos requiere conexión al servidor.
 
 ## Desarrollo
 

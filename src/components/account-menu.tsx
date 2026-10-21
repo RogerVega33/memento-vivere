@@ -5,10 +5,12 @@ import { ChangePasswordDialog } from './change-password-dialog';
 import { Icon } from './icons';
 import { useHistoryPanel } from './use-history-panel';
 import type { User } from '@/domain/types';
+import { usePwa } from './pwa/pwa-provider';
 
 const panels = ['closed', 'password'] as const;
 export function AccountMenu({ user, onLogout, busy }: { user: User; onLogout: () => void; busy: boolean }) {
   const menu = usePopupMenu();
+  const pwa = usePwa();
   const [panel, navigate] = useHistoryPanel('closed', panels);
   const changingPassword = panel === 'password';
   const wasChangingPassword = useRef(false);
@@ -31,6 +33,8 @@ export function AccountMenu({ user, onLogout, busy }: { user: User; onLogout: ()
       </button>
       {menu.open && <div ref={menu.menuRef} id={menu.menuId} className="account-menu" role="menu" aria-label="Mi cuenta">
         <span className="account-menu-heading" aria-hidden="true">{user.username}</span>
+        {pwa.canInstall && <button type="button" role="menuitem" tabIndex={-1}
+          onClick={() => { menu.close(); void pwa.install(); }}><Icon name="download" size={18} />Instalar aplicación</button>}
         <button type="button" role="menuitem" tabIndex={-1} disabled={busy} onClick={() => { menu.close(); navigate('password'); }}><Icon name="key" size={18} />Cambiar contraseña</button>
         <button type="button" role="menuitem" tabIndex={-1} disabled={busy} onClick={() => { menu.close(); onLogout(); }}><Icon name="logout" size={18} />Cerrar sesión</button>
       </div>}

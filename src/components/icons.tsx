@@ -1,6 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react';
-type Name = 'help' | 'hourglass' | 'arrow' | 'chevron' | 'plus' | 'close' | 'calendar' | 'image' | 'edit' | 'trash' | 'spark' | 'grid' | 'check' | 'expand' | 'collapse' | 'search' | 'more' | 'eye' | 'eye-off' | 'key' | 'logout';
+type Name = 'help' | 'hourglass' | 'arrow' | 'chevron' | 'plus' | 'close' | 'calendar' | 'image' | 'edit' | 'trash' | 'spark' | 'grid' | 'check' | 'expand' | 'collapse' | 'search' | 'more' | 'eye' | 'eye-off' | 'key' | 'logout' | 'download' | 'refresh';
 const paths: Record<Name, ReactNode> = {
+  download: <><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" /></>,
+  refresh: <><path d="M20 7v5h-5M4 17v-5h5M6.3 6.3a8 8 0 0 1 13 2.7M4.7 15a8 8 0 0 0 13 2.7" /></>,
   help: <><circle cx="12" cy="12" r="9" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4M12 17h.01" /></>,
   key: <><circle cx="8" cy="8" r="5" /><path d="m11.5 11.5 9 9M17 17l3-3M14 14l3-3" /></>,
   logout: <><path d="M9 4H4v16h5M10 12h11m-4-4 4 4-4 4" /></>,

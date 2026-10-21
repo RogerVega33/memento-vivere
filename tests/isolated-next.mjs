@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
+import { buildPwa } from '../scripts/pwa.mjs';
 
 // Next automatically reads .env files. Validate only an explicit source copy,
 // outside the user's checkout, without copying or opening any environment file.
@@ -21,21 +22,22 @@ if (needsDatabase) {
   }
 }
 const directory = await mkdtemp(join(tmpdir(), 'memento-validation-'));
-const extensions = new Set(['.ts', '.tsx', '.mjs', '.css', '.json', '.svg', '.png', '.jpg', '.gif', '.webp', '.ico']);
+const extensions = new Set(['.ts', '.tsx', '.mjs', '.js', '.css', '.json', '.svg', '.png', '.jpg', '.gif', '.webp', '.ico', '.webmanifest']);
 async function copySources(source, destination) {
   await mkdir(destination, { recursive: true });
   for (const entry of await readdir(source, { withFileTypes: true })) {
-    if (/(^|\.)env($|\.)/.test(entry.name) || entry.name === 'node_modules' || entry.name === '.git') continue;
+    if (/(^|\.)env($|\.)/.test(entry.name) || entry.name === 'node_modules' || entry.name === '.git' || entry.name === 'sw.js') continue;
     if (entry.isDirectory()) await copySources(join(source, entry.name), join(destination, entry.name));
     else if (entry.isFile() && extensions.has(extname(entry.name))) await cp(join(source, entry.name), join(destination, entry.name));
   }
 }
 let child;
 try {
-  for (const file of ['package.json', 'tsconfig.json', 'next-env.d.ts', 'next.config.mjs', 'server.mjs']) await cp(join(project, file), join(directory, file));
+  for (const file of ['package.json', 'package-lock.json', 'tsconfig.json', 'next-env.d.ts', 'next.config.mjs', 'server.mjs']) await cp(join(project, file), join(directory, file));
   await mkdir(join(directory, 'db'), { recursive: true });
   await cp(join(project, 'db/001_initial.sql'), join(directory, 'db/001_initial.sql'));
   for (const name of ['src', 'public']) await copySources(join(project, name), join(directory, name));
+  for (const name of ['scripts', 'pwa']) await copySources(join(project, name), join(directory, name));
   await symlink(join(project, 'node_modules'), join(directory, 'node_modules'), 'dir');
   const command = needsDatabase ? [join(directory, 'server.mjs'), ...(process.argv[2] === 'dev' ? ['--dev'] : []), ...process.argv.slice(3)]
     : [join(project, 'node_modules/next/dist/bin/next'), ...process.argv.slice(2)];
@@ -52,5 +54,6 @@ try {
     child.once('error', reject);
     child.once('exit', code => resolveExit(code ?? 1));
   });
+  if (code === 0 && process.argv[2] === 'build') await buildPwa(directory);
   process.exitCode = code;
 } finally { await rm(directory, { recursive: true, force: true }); }

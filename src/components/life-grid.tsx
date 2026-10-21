@@ -132,7 +132,7 @@ export function LifeGrid({ state, selectedMonth, onSelect, query, onSearch }: Li
         <button type="submit" className="button secondary">Buscar</button>
       </div>
       <p id="memory-search-status" className={`field-hint${searching ? '' : ' visually-hidden'}`} role="status">
-        {searching ? !search ? 'Buscando recuerdos…' : `${search.memoryCount} ${search.memoryCount === 1 ? 'recuerdo encontrado' : 'recuerdos encontrados'} en ${Object.keys(search.monthCounts).length} ${Object.keys(search.monthCounts).length === 1 ? 'mes' : 'meses'}. Solo las coincidencias se pintan de azul.` : ''}
+        {searching ? !search ? 'Buscando recuerdos…' : `${search.memoryCount} ${search.memoryCount === 1 ? 'recuerdo encontrado' : 'recuerdos encontrados'} en ${Object.keys(search.monthCounts).length} ${Object.keys(search.monthCounts).length === 1 ? 'mes' : 'meses'}. Solo las coincidencias se pintan de verde.` : ''}
       </p>
     </form>
     <div className="legend">
