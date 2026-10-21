@@ -59,7 +59,7 @@ const sessionLock = (active = true) => [step(/FROM memento.users.*FOR UPDATE/), 
 const context = (row = profileRow) => step(/FROM \(SELECT 1\)/, [row]);
 const writeContext = () => [step(/FROM memento.profiles.*FOR UPDATE/), context()];
 const readSession = (active = true) => step(/FROM memento.sessions/, active ? [{ token_hash: hash }] : []);
-const repository = fake => new PostgresLifeRepository(fake.db, id, hash, { uploadInProgress: false });
+const repository = fake => new PostgresLifeRepository(fake.db, id, hash);
 const input = { id: null, draft: { title: 'Un recuerdo', year: 2020, month: 1, day: null, tags: ['Viajes'] },
   retainedPhotoIds: [], photos: [], version: null };
 

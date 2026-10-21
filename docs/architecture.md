@@ -24,7 +24,7 @@ Tanto en desarrollo como en Docker, `server.mjs` prepara la base antes de acepta
 | `src/server/auth-rate-limit.ts` | Ventanas de solicitudes por IP y usuario. |
 | `src/server/store.ts` y `src/server/storage.ts` | Instancia compartida del almacenamiento PostgreSQL. |
 | `src/server/postgres/` | Conexión, inicialización, consultas y transacciones. |
-| `src/server/images.mjs` y `src/server/*heic.mjs` | Conversión de fotografías a WebP y limpieza de temporales. |
+| `src/server/images.mjs`, `src/server/photo-*.mjs` y `src/server/*heic.mjs` | Conversión de fotos en procesos temporales, plazo de 90 segundos por foto y limpieza de archivos. |
 | `src/instrumentation.ts` y `src/server/logger.mjs` | Logs de arranque, solicitudes y errores. |
 | `server.mjs` | Arranque HTTP, contexto de red y cierre del servidor. |
 | `src/components/pwa/`, `pwa/service-worker.js` y `scripts/pwa.mjs` | Instalación, actualizaciones voluntarias y caché de la interfaz pública versionada al compilar. |
@@ -37,7 +37,7 @@ Tanto en desarrollo como en Docker, `server.mjs` prepara la base antes de acepta
 
 1. La interfaz realiza una solicitud mediante `src/components/api.ts`.
 2. La API comprueba origen, sesión, propietario y datos recibidos; las rutas de autenticación aplican sus límites de solicitudes.
-3. Si hay fotografías nuevas, el servidor las convierte a WebP antes de abrir la transacción de guardado.
+3. Se recibe un formulario a la vez para evitar acumular archivos en memoria. Si hay fotos nuevas, se convierte una a la vez a WebP en un proceso separado, sin credenciales de la aplicación; a los 90 segundos se termina su grupo de procesos. La recepción se libera antes de convertir, permitiendo guardar recuerdos sin fotos nuevas.
 4. El repositorio revalida la sesión y guarda los cambios del usuario en una transacción. Las versiones de recuerdos evitan sobrescribir ediciones simultáneas.
 5. La API devuelve el resultado y la interfaz actualiza su estado.
 

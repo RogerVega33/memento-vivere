@@ -12,7 +12,6 @@ const freshSession = () => { const token = randomBytes(32).toString('base64url')
 /** Credential service; repository owns transactions, never the expensive hashes. */
 export class PostgresAuthStore implements AuthStore {
   private readonly accounts: PostgresAuthRepository;
-  private readonly uploads = { uploadInProgress: false };
   constructor(db: Database, private readonly secrets = { hashSecret, verifySecret, generateRecoveryPhrase }) {
     this.accounts = new PostgresAuthRepository(db);
   }
@@ -20,7 +19,7 @@ export class PostgresAuthStore implements AuthStore {
     const hash = digest(token);
     if (!hash) return null;
     const user = await this.accounts.session(hash);
-    return user ? { user, repository: new PostgresLifeRepository(this.accounts.db, user.id, hash, this.uploads) } : null;
+    return user ? { user, repository: new PostgresLifeRepository(this.accounts.db, user.id, hash) } : null;
   }
   async register(input: unknown, previousToken: string | null = null) {
     const { username, password } = credentials(input, true);

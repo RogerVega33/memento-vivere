@@ -6,7 +6,6 @@ export type SaveInput = {
   photos: Photo[]; version: number | null;
 };
 export interface LifeRepository {
-  uploadInProgress: boolean;
   requireProfile(): Promise<Profile>;
   setup(birthDate: string): Promise<Profile>;
   snapshot(query?: string): Promise<Snapshot>;

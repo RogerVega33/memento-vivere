@@ -64,7 +64,7 @@ test('native conversion does not impose a virtual-address limit and controls all
       assert.equal(command, '/usr/bin/prlimit');
       assert.ok(!args.some(arg => arg.startsWith('--as')));
       assert.deepEqual(args, ['--core=0', '--', '/usr/bin/heif-thumbnailer', '-p', '-s', '1600', '/tmp/fictional/input.heic', '/tmp/fictional/output.png']);
-      assert.equal(options.timeout, 60000);
+      assert.equal(options.timeout, 90000);
       assert.equal(options.killSignal, 'SIGKILL');
       assert.equal(options.shell, undefined);
       assert.deepEqual(options.env, {

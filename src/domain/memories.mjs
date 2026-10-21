@@ -1,7 +1,10 @@
 import { ValidationError } from './errors.mjs';
 import { dateKey, monthKey, parseDate, parseMonth, validateBirthDate } from './dates.mjs';
 
-export const LIMITS = Object.freeze({ photosPerMemory: 6, fileBytes: 20 * 1024 * 1024, requestBytes: 50 * 1024 * 1024, titleLength: 160, descriptionLength: 500, tagsPerMemory: 20, tagLength: 60 });
+const photosPerMemory = 6;
+const fileBytes = 20 * 1024 * 1024;
+// Allow all six maximum-sized files, plus multipart fields and boundaries.
+export const LIMITS = Object.freeze({ photosPerMemory, fileBytes, requestBytes: photosPerMemory * fileBytes + 1024 * 1024, titleLength: 160, descriptionLength: 500, tagsPerMemory: 20, tagLength: 60 });
 
 /** @param {unknown} input @returns {string[]} */
 export function normalizeTags(input) {

@@ -40,6 +40,7 @@ const events = new Set([
   'photo.optimize.completed',
   'photo.optimize.failed',
   'photo.encode.failed',
+  'photo.worker.failed',
   'heic.decode.started',
   'heic.decode.progress',
   'heic.decode.completed',
@@ -121,7 +122,7 @@ function safeFields(source) {
     operation: ['create', 'update'], decoder: ['native-libheif'],
     executable: ['/usr/bin/prlimit', '/usr/bin/heif-thumbnailer'],
     signal: ['SIGKILL', 'SIGTERM', 'SIGABRT', 'SIGSEGV', 'SIGBUS'],
-    reason: ['timeout', 'resource', 'unavailable', 'signal', 'decode'],
+    reason: ['timeout', 'cancelled', 'resource', 'unavailable', 'signal', 'decode'],
     routeType: ['render', 'route', 'action', 'proxy'],
     origin: ['uncaughtException', 'unhandledRejection'], protocol: ['http', 'https'],
   })) if (allowed.includes(value(key))) result[key] = value(key);

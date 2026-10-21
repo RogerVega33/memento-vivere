@@ -28,7 +28,8 @@ COPY --from=build --chown=node:node /app/scripts/pwa.mjs ./scripts/pwa.mjs
 COPY --from=build --chown=node:node /app/src/server/request-network.mjs ./src/server/request-network.mjs
 COPY --from=build --chown=node:node /app/src/server/logger.mjs ./src/server/logger.mjs
 COPY --from=build --chown=node:node /app/src/server/startup.mjs ./src/server/startup.mjs
-COPY --from=build --chown=node:node /app/src/domain/errors.mjs ./src/domain/errors.mjs
+COPY --from=build --chown=node:node /app/src/domain/*.mjs ./src/domain/
+COPY --from=build --chown=node:node /app/src/server/photo-*.mjs /app/src/server/decode-heic.mjs /app/src/server/native-heic.mjs ./src/server/
 COPY --from=build --chown=node:node /app/src/server/postgres/*.mjs ./src/server/postgres/
 COPY --from=build --chown=node:node /app/db/001_initial.sql ./db/001_initial.sql
 COPY --from=build --chown=node:node /app/public ./public

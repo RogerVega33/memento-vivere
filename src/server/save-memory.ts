@@ -8,7 +8,7 @@ import { parseJson, readFormData, requireSameOrigin } from './http.mjs';
 import { optimizePhoto } from './images.mjs';
 import { log } from './logger.mjs';
 
-// Serialize expensive image processing. Final repository.save also validates
+// Only image conversion is serialized. Final repository.save also validates
 // revision, birth date and today's date after asynchronous processing completes.
 export async function saveMemory(request: Request, id: string | null = null) {
   const started = performance.now();
@@ -17,8 +17,6 @@ export async function saveMemory(request: Request, id: string | null = null) {
   const account = await requireAccount(request);
   const repository = account.repository;
   const profile = await repository.requireProfile();
-  if (repository.uploadInProgress) throw new RepositoryError('Se está guardando otro recuerdo. Inténtalo de nuevo en un momento.', 429);
-  repository.uploadInProgress = true;
   try {
     const form = await readFormData(request);
     const payloadText = form.get('payload');
@@ -38,7 +36,7 @@ export async function saveMemory(request: Request, id: string | null = null) {
       if (!(file instanceof File)) throw new ValidationError('La fotografía no es válida.');
       if (file.size > LIMITS.fileBytes) throw new ValidationError('Cada fotografía puede pesar hasta 20 MB.');
       log('info', 'memory.photo.started', { photoIndex: index + 1, totalPhotos: files.length, inputBytes: file.size });
-      const photo = await optimizePhoto(new Uint8Array(await file.arrayBuffer()));
+      const photo = await optimizePhoto(new Uint8Array(await file.arrayBuffer()), { signal: request.signal });
       photos.push({ id: randomUUID(), ...photo });
       log('info', 'memory.photo.completed', { photoIndex: index + 1, outputBytes: photo.data.byteLength });
     }
@@ -50,5 +48,5 @@ export async function saveMemory(request: Request, id: string | null = null) {
   } catch (error) {
     log('error', 'memory.save.failed', { durationMs: Math.round(performance.now() - started), error });
     throw error;
-  } finally { repository.uploadInProgress = false; }
+  }
 }

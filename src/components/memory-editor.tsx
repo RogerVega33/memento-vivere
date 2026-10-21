@@ -71,11 +71,6 @@ export function MemoryEditor({ memory, selectedMonth, birthDate, today, onClose,
       setError(`Utiliza fotografías ${PHOTO_FORMATS_LABEL}.`);
       return;
     }
-    const totalBytes = [...photos.map(photo => photo.file), ...files].reduce((sum, file) => sum + file.size, 0);
-    if (totalBytes > LIMITS.requestBytes - 100000) {
-      setError('Añade menos fotografías a la vez: la selección debe pesar menos de 50 MB.');
-      return;
-    }
     setPhotos(previous => [...previous, ...files.map(file => {
       const url = URL.createObjectURL(file);
       objectUrls.current.add(url);

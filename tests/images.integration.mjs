@@ -3,6 +3,12 @@ import assert from 'node:assert/strict';
 import sharp from 'sharp';
 import { optimizePhoto } from '../src/server/images.mjs';
 import { decodeHeic } from '../src/server/decode-heic.mjs';
+import { spawn } from 'node:child_process';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
+import { runPhotoProcess } from '../src/server/photo-process.mjs';
 
 test('large photographs become WebP within 1600px, preserving their proportions', async () => {
   const input = await sharp({ create: { width: 3200, height: 2400, channels: 3, background: '#a87a61' } }).jpeg().toBuffer();
@@ -51,4 +57,42 @@ test('non-image bytes, SVG and oversized uploads are rejected', async () => {
   await assert.rejects(() => optimizePhoto(new Uint8Array([1, 2, 3])));
   await assert.rejects(() => optimizePhoto(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>')));
   await assert.rejects(() => optimizePhoto(new Uint8Array(21 * 1024 * 1024)));
+});
+
+test('cancelling a disposable worker stops its real descendant as well', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'memento-worker-test-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const marker = join(directory, 'heartbeat');
+  const fixture = join(directory, 'worker.mjs');
+  await writeFile(fixture, `
+    import { spawn } from 'node:child_process';
+    const child = spawn(process.execPath, ['-e',
+      'const fs = require("node:fs"); setInterval(() => fs.writeFileSync(process.argv[1], String(Date.now())), 10);',
+      ${JSON.stringify(marker)}], { stdio: 'ignore', env: { PATH: '/usr/bin:/bin' } });
+    setInterval(() => {}, 1000);
+  `);
+  const controller = new AbortController();
+  const job = runPhotoProcess(join(directory, 'input'), join(directory, 'output'), {
+    signal: controller.signal,
+    spawn(command, args, options) {
+      const changed = [...args];
+      changed[3] = fixture;
+      return spawn(command, changed, options);
+    },
+  });
+  const rejected = assert.rejects(job, { status: 499 });
+  try {
+    let alive = false;
+    for (let index = 0; index < 100; index++) {
+      try { await readFile(marker); alive = true; break; }
+      catch { await delay(20); }
+    }
+    assert.equal(alive, true, 'The test descendant must start before cancellation');
+    controller.abort();
+    await rejected;
+    await delay(30);
+    const stopped = await readFile(marker, 'utf8');
+    await delay(80);
+    assert.equal(await readFile(marker, 'utf8'), stopped, 'A descendant must not keep running after its worker is cancelled');
+  } finally { controller.abort(); await rejected; }
 });

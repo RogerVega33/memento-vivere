@@ -4,6 +4,10 @@ import { LIMITS } from '../domain/memories.mjs';
 import { ValidationError } from '../domain/errors.mjs';
 import { log, newRequestContext, requestContext } from './logger.mjs';
 
+// Limit simultaneous upload buffers, independently from the conversion slot.
+const scope = /** @type {typeof globalThis & {mementoFormReader?:{busy:boolean}}} */ (globalThis);
+const formReader = scope.mementoFormReader ??= { busy: false };
+
 /** @param {unknown} data @param {number} [status] */
 export function json(data, status = 200) {
   return Response.json(data, { status, headers: { 'Cache-Control': 'no-store, max-age=0' } });
@@ -66,12 +70,16 @@ export async function readJson(request, maximum) {
 
 /** @param {Request} request */
 export async function readFormData(request) {
-  const body = await boundedRequest(request);
-  try { return await body.formData(); }
-  catch (error) {
-    if (error instanceof TypeError) throw new ValidationError('El formulario del recuerdo no es válido.');
-    throw error;
-  }
+  if (formReader.busy) throw new RepositoryError('Se está recibiendo otro recuerdo. Inténtalo de nuevo en un momento.', 429);
+  formReader.busy = true;
+  try {
+    const body = await boundedRequest(request);
+    try { return await body.formData(); }
+    catch (error) {
+      if (error instanceof TypeError) throw new ValidationError('El formulario del recuerdo no es válido.');
+      throw error;
+    }
+  } finally { formReader.busy = false; }
 }
 
 /** Read a bounded stream before parsing; Content-Length alone is not trustworthy.

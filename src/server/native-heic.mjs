@@ -4,9 +4,9 @@ import { dirname } from 'node:path';
 import { RepositoryError } from '../domain/errors.mjs';
 import { ValidationError } from '../domain/errors.mjs';
 import { log } from './logger.mjs';
+import { PHOTO_TIMEOUT_MS } from './photo-process.mjs';
 
 const execute = promisify(execFile);
-const TIMEOUT_MS = 60_000;
 
 /** @typedef {(command: string, args: string[], options: import('node:child_process').ExecFileOptionsWithStringEncoding) => Promise<{stdout: string, stderr: string}>} Execute */
 
@@ -17,7 +17,7 @@ const TIMEOUT_MS = 60_000;
  * @param {{execute?: Execute, timeoutMs?: number}} [options] */
 export async function runHeicDecoder(inputPath, outputPath, options = {}) {
   const started = performance.now();
-  const timeoutMs = options.timeoutMs ?? TIMEOUT_MS;
+  const timeoutMs = options.timeoutMs ?? PHOTO_TIMEOUT_MS;
   log('info', 'heic.decode.started', { decoder: 'native-libheif', timeoutMs, allocatorArenas: 2 });
   const heartbeat = setInterval(() => log('info', 'heic.decode.progress', { durationMs: Math.round(performance.now() - started) }), 10_000);
   heartbeat.unref();

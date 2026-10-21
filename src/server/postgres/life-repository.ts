@@ -8,7 +8,6 @@ import { Database, sqlCode } from './database';
 const validId = (id: string) => /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id);
 const instant = (value: Date | string) => new Date(value).toISOString();
 const sessionEnded = () => new RepositoryError('Tu sesión terminó. Inicia sesión de nuevo.', 401);
-type Lock = { uploadInProgress: boolean };
 type ProfileRow = { birth_date: string | null; horizon_years: number | null; created_at: Date | string | null; today: string };
 type MemoryRow = {
   id: string; title: string; description: string; event_year: number; event_month: number;
@@ -36,9 +35,7 @@ export async function lockSession(client: SqlClient, userId: string, sessionHash
 /** Session-scoped; all writes recheck the session inside the atomic operation. */
 export class PostgresLifeRepository implements LifeRepository {
   constructor(private readonly db: Database, private readonly userId: string,
-    private readonly sessionHash: Buffer, private readonly lock: Lock) {}
-  get uploadInProgress() { return this.lock.uploadInProgress; }
-  set uploadInProgress(value: boolean) { this.lock.uploadInProgress = value; }
+    private readonly sessionHash: Buffer) {}
 
   private async readSession(client: SqlClient) {
     const { rows } = await client.query(`SELECT token_hash FROM memento.sessions

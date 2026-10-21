@@ -16,7 +16,7 @@ test('life routes await asynchronous repositories and forward the authenticated 
     createdAt: '2026-10-20T00:00:00Z', updatedAt: '2026-10-20T00:00:00Z' };
   const snapshot = { profile, today: '2026-10-20', memoryCount: 1, photoCount: 0, monthCounts: { '2020-01': 1 } };
   const stub = (name, value) => async (...args) => { await Promise.resolve(); calls.push([name, ...args]); return value; };
-  const repository = { uploadInProgress: false, setup: stub('setup', profile), requireProfile: stub('requireProfile', profile),
+  const repository = { setup: stub('setup', profile), requireProfile: stub('requireProfile', profile),
     snapshot: stub('snapshot', snapshot), listMonth: stub('listMonth', [memory]), save: stub('save', memory),
     delete: stub('delete'), getPhoto: stub('getPhoto', { data: new Uint8Array([1, 2]), width: 1, height: 2 }) };
   auth.authenticate = stub('authenticate', { user, repository });

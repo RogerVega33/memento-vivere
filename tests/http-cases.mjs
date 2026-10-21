@@ -39,6 +39,16 @@ export const cases = [
     const request = new Request(url, { method: 'POST', headers: { 'Content-Length': '10000' }, body: 'data' });
     await assert.rejects(() => boundedRequest(request, 100), error => error.status === 413);
   }],
+  ['Upload admission allows six 20 MiB photos plus form overhead and still rejects oversized requests', async () => {
+    const photosBytes = 6 * 20 * 1024 * 1024;
+    const form = new FormData();
+    form.set('payload', '{"title":"Ficticio"}');
+    // Synthetic declared lengths exercise admission without allocating 120 MiB.
+    const allowed = new Request(url, { method: 'POST', body: form, headers: { 'Content-Length': String(photosBytes + 1024) } });
+    assert.equal((await readFormData(allowed)).get('payload'), '{"title":"Ficticio"}');
+    const excessive = new Request(url, { method: 'POST', body: form, headers: { 'Content-Length': String(photosBytes + 2 * 1024 * 1024) } });
+    await assert.rejects(readFormData(excessive), { status: 413 });
+  }],
   ['Chunked uploads cannot bypass the byte limit and their stream is cancelled', async () => {
     let cancelled = false;
     const body = new ReadableStream({ start(controller) { controller.enqueue(new Uint8Array(6)); controller.enqueue(new Uint8Array(6)); }, cancel() { cancelled = true; } });
@@ -66,6 +76,20 @@ export const cases = [
     for (const [index, file] of photos.entries()) {
       assert.deepEqual(new Uint8Array(await file.arrayBuffer()), contents[index]);
     }
+  }],
+  ['Only one multipart body is buffered at a time and its slot is released before conversion', async () => {
+    const form = new FormData();
+    form.set('payload', '{"title":"Ficticio"}');
+    const original = new Request(url, { method: 'POST', body: form });
+    const bytes = new Uint8Array(await original.arrayBuffer());
+    let controller;
+    const stream = new ReadableStream({ start(value) { controller = value; } });
+    const pending = readFormData(new Request(url, { method: 'POST', headers: original.headers, body: stream, duplex: 'half' }));
+    try {
+      await assert.rejects(readFormData(new Request(url, { method: 'POST', body: form })), { status: 429 });
+    } finally { controller.enqueue(bytes); controller.close(); }
+    assert.equal((await pending).get('payload'), '{"title":"Ficticio"}');
+    assert.equal((await readFormData(new Request(url, { method: 'POST', body: form }))).get('payload'), '{"title":"Ficticio"}');
   }],
   ['Cross-site requests are rejected even when a host value matches', () => {
     assert.throws(() => requireSameOrigin(new Request(url, { headers: { origin: 'https://another.example', 'sec-fetch-site': 'cross-site' } })), error => error.status === 403);
