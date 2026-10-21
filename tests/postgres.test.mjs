@@ -226,6 +226,26 @@ test('profile setup creates one profile using the database clock and default hor
   fake.done();
 });
 
+test('profile setup stores the horizon selected by the calendar-year birth policy', async () => {
+  for (const [birthDate, horizonYears] of [['1957-01-01', 80], ['1956-12-31', 100], ['1927-01-01', 100], ['1927-12-31', 100]]) {
+    const fake = scripted([begin(), ...sessionLock(), step(/FROM memento.profiles.*FOR UPDATE/),
+      context({ ...profileRow, birth_date: null, horizon_years: null, created_at: null }),
+      step(/INSERT INTO memento.profiles/, [{ created_at: now }], values => assert.deepEqual(values, [id, birthDate, horizonYears])), commit()]);
+    const profile = await repository(fake).setup(birthDate);
+    assert.equal(profile.horizonYears, horizonYears);
+    fake.done();
+  }
+});
+
+test('profile setup rejects years before current-year-minus-99 without inserting a profile', async () => {
+  for (const birthDate of ['1000-01-01', '1926-12-31']) {
+    const fake = scripted([begin(), ...sessionLock(), step(/FROM memento.profiles.*FOR UPDATE/),
+      context({ ...profileRow, birth_date: null, horizon_years: null, created_at: null }), rollback()]);
+    await assert.rejects(repository(fake).setup(birthDate), /1927/);
+    fake.done();
+  }
+});
+
 test('month reads preserve unknown days and derive precision without a stored column', async () => {
   const fake = scripted([begin(), readSession(), context(), step(/ORDER BY m.event_day ASC NULLS LAST, m.created_at, m.id/, [existing]), commit()]);
   const memories = await repository(fake).listMonth('2020-01');

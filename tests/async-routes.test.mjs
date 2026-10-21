@@ -56,3 +56,31 @@ test('auth routes limit before reading an invalid body and return Retry-After', 
     }
   } finally { authLimits.ip = previous; }
 });
+
+test('profile API rejects old birth years before invoking storage setup', async () => {
+  const { minimumBirthDate, todayInZone } = loadComponent('src/domain/dates.mjs');
+  const original = auth.authenticate;
+  const calls = [];
+  const today = todayInZone();
+  const minimum = minimumBirthDate(today);
+  const repository = { setup: async value => { calls.push(value); }, snapshot: async () => ({ profile: null, today }) };
+  let authentications = 0;
+  auth.authenticate = async () => { authentications++; return { user: { id: 'fictional-user', username: 'ficticio' }, repository }; };
+  const request = birthDate => new Request('http://localhost/api/profile', {
+    method: 'POST', headers: { cookie: `mv_session=${'a'.repeat(43)}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ birthDate }),
+  });
+  try {
+    for (const value of ['1000-01-01', `${Number(minimum.slice(0, 4)) - 1}-12-31`]) {
+      const response = await route('profile').POST(request(value));
+      assert.equal(response.status, 400);
+      assert.match((await response.json()).error, new RegExp(minimum.slice(0, 4)));
+    }
+    assert.deepEqual(calls, []);
+    for (const value of [minimum, today]) {
+      assert.equal((await route('profile').POST(request(value))).status, 201);
+    }
+    assert.deepEqual(calls, [minimum, today]);
+    assert.equal(authentications, 4, 'authenticate once per request');
+  } finally { auth.authenticate = original; }
+});

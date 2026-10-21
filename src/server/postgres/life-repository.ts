@@ -1,5 +1,5 @@
 import { RepositoryError } from '../../domain/errors.mjs';
-import { HORIZON_YEARS, monthKey, parseMonth, validateBirthDate } from '../../domain/dates.mjs';
+import { horizonYearsForBirthDate, monthKey, parseMonth, validateBirthDate } from '../../domain/dates.mjs';
 import { isMemoryVisible, LIMITS, matchesMemory, validateMemory } from '../../domain/memories.mjs';
 import type { Memory, Profile, Snapshot } from '../../domain/types';
 import type { LifeRepository, Photo, SaveInput, SqlClient } from '../contracts';
@@ -72,10 +72,10 @@ export class PostgresLifeRepository implements LifeRepository {
         await lockSession(client, this.userId, this.sessionHash);
         const context = await this.context(client, true);
         if (context.profile) throw new RepositoryError('La fecha de nacimiento ya está configurada y no puede modificarse.', 409);
-        validateBirthDate(birthDate, context.today);
+        const horizonYears = horizonYearsForBirthDate(birthDate, context.today);
         const { rows } = await client.query<{ created_at: Date }>(`INSERT INTO memento.profiles (user_id, birth_date, horizon_years)
-          VALUES ($1::uuid, $2::date, $3::integer) RETURNING created_at`, [this.userId, birthDate, HORIZON_YEARS]);
-        return { birthDate, horizonYears: HORIZON_YEARS, createdAt: instant(rows[0].created_at) };
+          VALUES ($1::uuid, $2::date, $3::integer) RETURNING created_at`, [this.userId, birthDate, horizonYears]);
+        return { birthDate, horizonYears, createdAt: instant(rows[0].created_at) };
       });
     } catch (error) {
       if (sqlCode(error) === '23505') throw new RepositoryError('La fecha de nacimiento ya está configurada y no puede modificarse.', 409);

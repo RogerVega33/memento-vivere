@@ -137,7 +137,7 @@ export function MemoryEditor({ memory, selectedMonth, birthDate, today, onClose,
             />
           </div>
           <div>
-            <HelpLabel htmlFor="memory-day" label="Día" suffix={<span className="optional-label">opcional</span>} hintId="memory-day-hint" hint="Si no recuerdas el día, puedes dejarlo vacío." />
+            <HelpLabel htmlFor="memory-day" label="Día" hintId="memory-day-hint" hint="Campo opcional. Si no recuerdas el día, puedes dejarlo vacío." />
             <input
               id="memory-day"
               aria-describedby="memory-day-hint"
@@ -152,7 +152,7 @@ export function MemoryEditor({ memory, selectedMonth, birthDate, today, onClose,
             />
           </div>
         </div>
-        <label htmlFor="memory-description">Tu recuerdo <span className="optional-label">opcional</span></label>
+        <HelpLabel htmlFor="memory-description" label="Tu recuerdo" hintId="memory-description-hint" hint={`Campo opcional. Cuenta lo que pasó en hasta ${LIMITS.descriptionLength} caracteres.`} />
         <textarea
           id="memory-description"
           rows={3}
@@ -166,10 +166,7 @@ export function MemoryEditor({ memory, selectedMonth, birthDate, today, onClose,
           }}
           onChange={event => setDescription(singleLineDescription(event.target.value))}
         />
-        <p id="memory-description-hint" className="field-hint description-hint">
-          <span>{description.length}/{LIMITS.descriptionLength}</span>
-        </p>
-        <HelpLabel htmlFor="memory-tags" label="Etiquetas" suffix={<span className="optional-label">opcional</span>} hintId="memory-tags-hint" hint={`Sepáralas con comas. Hasta ${LIMITS.tagsPerMemory} etiquetas de ${LIMITS.tagLength} caracteres.`} />
+        <HelpLabel htmlFor="memory-tags" label="Etiquetas" hintId="memory-tags-hint" hint="Campo opcional. Sepáralas con comas." />
         <input
           id="memory-tags"
           aria-describedby="memory-tags-hint"
@@ -178,7 +175,7 @@ export function MemoryEditor({ memory, selectedMonth, birthDate, today, onClose,
           onChange={event => setTags(event.target.value)}
         />
         <div className="photo-field-heading">
-          <HelpLabel htmlFor="photos" label="Fotos" suffix={<span className="optional-label">opcional</span>} hintId="photo-restrictions" hint={`${PHOTO_FORMATS_LABEL}. Máximo ${LIMITS.photosPerMemory} fotos de 20 MB cada una.`} />
+          <HelpLabel htmlFor="photos" label="Fotos" hintId="photo-restrictions" hint={`Campo opcional. ${PHOTO_FORMATS_LABEL}. Máximo ${LIMITS.photosPerMemory} fotos de 20 MB cada una.`} />
           <span>{retained.length + photos.length}/{LIMITS.photosPerMemory}</span>
         </div>
         <input
@@ -241,7 +238,6 @@ export function MemoryEditor({ memory, selectedMonth, birthDate, today, onClose,
       <div className="dialog-actions">
         <button type="button" className="button secondary" disabled={busy} onClick={close}>Cancelar</button>
         <button type="submit" className="button primary" disabled={busy}>
-          <Icon name={busy ? 'hourglass' : 'check'} size={18} />
           {busy ? 'Guardando…' : 'Guardar recuerdo'}
         </button>
       </div>

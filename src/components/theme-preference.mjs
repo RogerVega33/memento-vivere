@@ -1,18 +1,18 @@
 const STORAGE_KEY = 'memento-theme';
 
-/** @typedef {'light' | 'dark' | 'auto'} Theme */
+/** @typedef {'light' | 'dark'} Theme */
 
 /** Keep the choice between header mounts, even if browser storage is blocked.
  * @param {() => Pick<Storage, 'getItem' | 'setItem'>} getStorage */
 export function createThemePreference(getStorage) {
   /** @type {Theme} */
-  let current = 'auto';
+  let current = 'light';
   return {
     current: () => current,
     read() {
       try {
         const stored = getStorage().getItem(STORAGE_KEY);
-        if (stored === 'light' || stored === 'dark' || stored === 'auto') current = stored;
+        if (stored === 'light' || stored === 'dark') current = stored;
       } catch { /* Retain the in-memory choice when storage is unavailable. */ }
       return current;
     },

@@ -1,8 +1,7 @@
 'use client';
 import { useState, type FormEvent } from 'react';
 import { Icon } from './icons';
-import { HelpLabel } from './help-tip';
-import { MONTH_NAMES, parseDate, validateBirthDate } from '@/domain/dates.mjs';
+import { minimumBirthDate, MONTH_NAMES, parseDate, validateNewBirthDate } from '@/domain/dates.mjs';
 import { api } from './api';
 import type { Snapshot } from '@/domain/types';
 export function Onboarding({ today, onSetup }: {
@@ -17,7 +16,7 @@ export function Onboarding({ today, onSetup }: {
     event.preventDefault();
     setError('');
     try {
-      validateBirthDate(birthDate, today);
+      validateNewBirthDate(birthDate, today);
       if (!confirmed) {
         setConfirmed(true);
         return;
@@ -46,13 +45,13 @@ export function Onboarding({ today, onSetup }: {
       </div>
       <h2 id="setup-title">Toda historia tiene una fecha de inicio</h2>
       <form onSubmit={submit}>
-        <HelpLabel htmlFor="birthDate" label="Fecha de nacimiento" hintId="birth-date-hint" hint="Introduce tu fecha de nacimiento para generar tu calendario de vida. Esta fecha se configura una sola vez. Revísala antes de continuar." />
+        <label htmlFor="birthDate">Fecha de nacimiento</label>
         <input
           id="birthDate"
           aria-describedby="birth-date-hint"
           type="date"
           required
-          min="0001-01-01"
+          min={minimumBirthDate(today)}
           max={today}
           value={birthDate}
           disabled={busy}
@@ -61,6 +60,7 @@ export function Onboarding({ today, onSetup }: {
             setConfirmed(false);
           }}
         />
+        <p id="birth-date-hint" className="field-hint birth-date-hint">Introduce tu fecha de nacimiento para generar tu calendario de vida. Esta fecha se configura una sola vez. Revísala antes de continuar.</p>
         {confirmed && <div className="confirmation-note birth-date-confirmation">Tu fecha de nacimiento será el <strong>
           {preview}
         </strong>. ¿Todo correcto?</div>}

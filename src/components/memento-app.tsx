@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, setApiUser } from './api';
 import { createLatestRequest } from './latest-request.mjs';
 import { AppHeader } from './app-header';
+import { AppFooter } from './app-footer';
 import { AuthView, RecoveryWords } from './auth-view';
 import { Onboarding } from './onboarding';
 import { LifeGrid } from './life-grid';
@@ -94,7 +95,6 @@ export function MementoApp() {
         : recovery && user ? <RecoveryWords username={user.username} phrase={recovery.phrase} recovered={recovery.recovered} onContinue={() => setRecovery(null)} />
           : <AuthView onAuthenticated={authenticated} notice={notice} />}
     </div>
-    <footer className="site-footer page-width"><p>Memento mori. Memento vivere.</p></footer>
   </div>;
 }
 
@@ -226,9 +226,7 @@ function LifeApp({ user, onLogout, signingOut, sessionError }: { user: User; onL
         />)}
       </>)}
     </div>
-    <footer className="site-footer page-width">
-      <p>Memento mori. Memento vivere.</p>
-    </footer>
+    <AppFooter />
     {toast && <div className="toast" role="status">
       <Icon name="check" size={17} />
       {toast}

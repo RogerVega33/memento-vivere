@@ -68,6 +68,27 @@ export function validateBirthDate(birthDate, today, horizonYears = HORIZON_YEARS
   return birthDate;
 }
 
+/** Earliest accepted birth date when creating a profile, using calendar years.
+ * @param {string} today */
+export function minimumBirthDate(today) {
+  return dateKey(Math.max(1, parseDate(today).year - 99), 1, 1);
+}
+
+/** Creation policy; existing profiles retain their saved dates and horizons.
+ * @param {string} birthDate @param {string} today */
+export function validateNewBirthDate(birthDate, today) {
+  validateBirthDate(birthDate, today);
+  const minimum = minimumBirthDate(today);
+  if (birthDate < minimum) throw new ValidationError(`El año de nacimiento debe ser ${minimum.slice(0, 4)} o posterior.`);
+  return birthDate;
+}
+
+/** @param {string} birthDate @param {string} today */
+export function horizonYearsForBirthDate(birthDate, today) {
+  validateNewBirthDate(birthDate, today);
+  return parseDate(today).year - parseDate(birthDate).year >= 70 ? 100 : HORIZON_YEARS;
+}
+
 /** @param {string} birthDate @param {string} today @param {number} [horizonYears] */
 export function generateLifeMonths(birthDate, today, horizonYears = HORIZON_YEARS) {
   validateBirthDate(birthDate, today, horizonYears);

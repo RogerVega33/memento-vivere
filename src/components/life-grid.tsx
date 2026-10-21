@@ -22,6 +22,7 @@ export function LifeGrid({ state, selectedMonth, onSelect, query, onSearch }: Li
   const searchField = useRef<HTMLInputElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
   const wasFullscreen = useRef(false);
+  const showMemoriesAfterFullscreen = useRef(false);
   const searching = Boolean(query.trim());
   const search = state.search?.query === query.trim() ? state.search : undefined;
   const highlightedCounts = searching ? search?.monthCounts ?? {} : monthCounts;
@@ -37,18 +38,40 @@ export function LifeGrid({ state, selectedMonth, onSelect, query, onSearch }: Li
   const percentage = Math.round(lived / months.length * 100);
   const columns = months.slice(0, 12).map(month => MONTH_NAMES[month.month - 1].slice(0, 1).toUpperCase());
   useEffect(() => {
-    if (!fullscreen && wasFullscreen.current)
+    if (!fullscreen && wasFullscreen.current) {
       toggle.current?.focus({ preventScroll: true });
+      if (showMemoriesAfterFullscreen.current) {
+        showMemoriesAfterFullscreen.current = false;
+        scrollToMemories();
+      }
+    }
     wasFullscreen.current = fullscreen;
   }, [fullscreen]);
   function closeFullscreen() {
     hideTooltip();
     setFullscreen(false);
   }
+  function scrollToMemories() {
+    document.getElementById('selected-month')?.scrollIntoView({ block: 'start' });
+  }
+  function selectMonth(key: string) {
+    if (key !== selectedMonth) {
+      onSelect(key);
+      return;
+    }
+    if (fullscreen) {
+      showMemoriesAfterFullscreen.current = true;
+      closeFullscreen();
+    } else {
+      scrollToMemories();
+    }
+  }
   function jumpCurrent() {
     const key = today.slice(0, 7);
     onSelect(key);
-    grid.current?.querySelector<HTMLButtonElement>(`[data-month="${key}"]`)?.focus({ preventScroll: true });
+    const currentMonth = grid.current?.querySelector<HTMLButtonElement>(`[data-month="${key}"]`);
+    currentMonth?.focus({ preventScroll: true });
+    currentMonth?.scrollIntoView({ block: 'center', inline: 'nearest' });
   }
   function keyboard(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     const delta: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -12, ArrowDown: 12 };
@@ -97,7 +120,7 @@ export function LifeGrid({ state, selectedMonth, onSelect, query, onSearch }: Li
         onSearch(searchInput.trim());
       }}
     >
-      <HelpLabel htmlFor="memory-search" label="Buscar recuerdos" hintId="memory-search-help" hint="Busca por título, texto o etiqueta. Pulsa Enter o Buscar para resaltar los meses con resultados en el mapa." />
+      <HelpLabel htmlFor="memory-search" label="Buscar recuerdos" hintId="memory-search-help" hint="Busca por título, texto o etiqueta." />
       <div className="search-controls">
         <div className="search-input">
           <Icon name="search" size={18} className="search-symbol" />
@@ -203,7 +226,7 @@ export function LifeGrid({ state, selectedMonth, onSelect, query, onSearch }: Li
                   tabIndex={month.index === Math.min(focusedIndex, lived - 1) ? 0 : -1}
                   onFocus={() => setFocusedIndex(month.index)}
                   onKeyDown={event => keyboard(event, month.index)}
-                  onClick={() => onSelect(month.key)}
+                  onClick={() => selectMonth(month.key)}
                 />;
               })}
             </div>);

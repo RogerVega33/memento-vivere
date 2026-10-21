@@ -79,11 +79,11 @@ export function HelpTip({ label, children, id }: { label: string; children: Reac
   </span>;
 }
 
-export function HelpLabel({ htmlFor, label, hint, hintId, suffix }: {
-  htmlFor: string; label: string; hint: ReactNode; hintId: string; suffix?: ReactNode;
+export function HelpLabel({ htmlFor, label, hint, hintId }: {
+  htmlFor: string; label: string; hint: ReactNode; hintId: string;
 }) {
   return <div className="field-label">
-    <label htmlFor={htmlFor}>{label}{suffix && <> {suffix}</>}</label>
+    <label htmlFor={htmlFor}>{label}</label>
     <HelpTip label={label} id={hintId}>{hint}</HelpTip>
   </div>;
 }

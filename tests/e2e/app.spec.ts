@@ -29,9 +29,9 @@ test('onboarding, calendar, memories, photo deletion and the same account on ano
   await expect(page.locator('.month-cell.future').first()).toBeDisabled();
   await page.getByRole('heading', { level: 1 }).hover();
   await expect(page.getByRole('tooltip')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Tema oscuro' }).click();
+  await page.getByRole('button', { name: 'Activar tema oscuro', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await page.getByRole('button', { name: 'Tema claro' }).click();
+  await page.getByRole('button', { name: 'Activar tema claro', exact: true }).click();
 
   await page.locator('[data-index="0"]').click();
   await expect(page.getByRole('heading', { name: 'El mapa de tu vida' })).toBeVisible();
@@ -49,7 +49,7 @@ test('onboarding, calendar, memories, photo deletion and the same account on ano
 
   await page.getByRole('button', { name: 'Añadir recuerdo' }).click();
   await page.getByLabel('Título').fill('Una fecha exacta');
-  await page.getByLabel('Día opcional', { exact: true }).fill('30');
+  await page.getByLabel('Día', { exact: true }).fill('30');
   await page.locator('input[type=file]').setInputFiles({ name: 'pixel.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEElEQVR4nGM40JAARAwQCgAvDgaB7YfukgAAAABJRU5ErkJggg==', 'base64') });
   await page.getByRole('button', { name: 'Guardar recuerdo' }).click();
   await expect(page.locator('.memory-card h2').first()).toHaveText('Una fecha exacta');

@@ -1,13 +1,18 @@
 import { test, expect } from './fixtures';
 import { login, logout, register, saveWords } from './auth-helpers';
+import type { Page } from '@playwright/test';
+
+async function expectLightTheme(page: Page) {
+  await expect(page.getByRole('button', { name: 'Activar tema oscuro', exact: true })).toHaveAttribute('title', 'Tema claro. Activar tema oscuro');
+}
 
 test('accounts have private calendars and recovery rotates words, preserves memories and revokes other devices', async ({ page, browser, extraHTTPHeaders }) => {
   test.setTimeout(90000);
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Tema claro', exact: true }).click();
+  await expectLightTheme(page);
   const alice = await register(page);
-  await expect(page.getByRole('button', { name: 'Tema claro', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expectLightTheme(page);
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(page.getByRole('heading', { name: 'Toda historia tiene una fecha de inicio' })).toBeVisible();
   await page.getByLabel('Fecha de nacimiento', { exact: true }).fill('2000-01-01');
@@ -20,7 +25,7 @@ test('accounts have private calendars and recovery rotates words, preserves memo
   await expect(page.getByRole('heading', { name: 'Un recuerdo privado de Alice' })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Un recuerdo privado de Alice' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Tema claro', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expectLightTheme(page);
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
   const remote = await browser.newContext({ baseURL: new URL(page.url()).origin, extraHTTPHeaders });
@@ -30,7 +35,7 @@ test('accounts have private calendars and recovery rotates words, preserves memo
     await login(otherDevice, alice.username, alice.password);
     await expect(otherDevice.getByRole('heading', { name: 'Un recuerdo privado de Alice' })).toBeVisible();
     await logout(page);
-    await expect(page.getByRole('button', { name: 'Tema claro', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Activar tema oscuro', exact: true })).toHaveAttribute('title', 'Tema claro. Activar tema oscuro');
     await register(page);
     await expect(page.getByRole('heading', { name: 'Toda historia tiene una fecha de inicio' })).toBeVisible();
     expect((await (await page.request.get('/api/state')).json()).memoryCount).toBe(0);
@@ -47,7 +52,7 @@ test('accounts have private calendars and recovery rotates words, preserves memo
     await page.getByLabel('Confirmar contraseña').fill(alice.password + ' nueva');
     await page.getByRole('button', { name: 'Recuperar cuenta', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Guarda tus palabras de recuperación' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Tema claro', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expectLightTheme(page);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     await expect(page.getByText('Estas palabras reemplazan las anteriores', { exact: false })).toBeVisible();
     const renewed = (await page.locator('.recovery-words strong').allTextContents()).join(' ');

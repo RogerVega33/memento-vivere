@@ -10,8 +10,8 @@ function browserStorage() {
 test('each selected theme survives header remounts and page reloads', () => {
   const storage = browserStorage();
   const preference = createThemePreference(() => storage);
-  assert.equal(preference.read(), 'auto');
-  for (const theme of ['light', 'dark', 'auto']) {
+  assert.equal(preference.read(), 'light');
+  for (const theme of ['light', 'dark']) {
     preference.select(theme);
     assert.equal(preference.current(), theme);
     assert.equal(preference.read(), theme);
@@ -21,7 +21,7 @@ test('each selected theme survives header remounts and page reloads', () => {
 
 test('unavailable storage cannot reset a manual theme when the header remounts', () => {
   const preference = createThemePreference(() => { throw new Error('Fictional blocked storage'); });
-  assert.equal(preference.read(), 'auto');
+  assert.equal(preference.read(), 'light');
   preference.select('light');
   assert.equal(preference.current(), 'light');
   assert.equal(preference.read(), 'light');
@@ -29,10 +29,12 @@ test('unavailable storage cannot reset a manual theme when the header remounts',
   assert.equal(preference.read(), 'dark');
 });
 
-test('invalid stored themes are ignored without overwriting the current selection', () => {
-  const storage = { getItem: () => 'invalid-theme', setItem() {} };
-  const preference = createThemePreference(() => storage);
-  assert.equal(preference.read(), 'auto');
-  preference.select('light');
-  assert.equal(preference.read(), 'light');
+test('legacy automatic and invalid stored themes fall back to light without resetting manual choices', () => {
+  for (const stored of ['auto', 'invalid-theme']) {
+    const storage = { getItem: () => stored, setItem() {} };
+    const preference = createThemePreference(() => storage);
+    assert.equal(preference.read(), 'light');
+    preference.select('dark');
+    assert.equal(preference.read(), 'dark');
+  }
 });

@@ -13,7 +13,10 @@ export function AppHeader({ user, onHome, onLogout, busy = false }: {
     </button>
     <div className="header-right">
       <ThemeSwitch />
-      {user && onLogout && <AccountMenu key={user.id} user={user} onLogout={onLogout} busy={busy} />}
+      {user && onLogout && <>
+        <span className="header-divider" aria-hidden="true" />
+        <AccountMenu key={user.id} user={user} onLogout={onLogout} busy={busy} />
+      </>}
     </div>
   </header>;
 }

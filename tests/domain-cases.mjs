@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { addMonths, completedYears, dateKey, daysInMonth, formatMemoryDate, generateLifeMonths, isLeapYear, monthKey, parseDate, parseMonth, todayInZone, validateBirthDate } from '../src/domain/dates.mjs';
+import { addMonths, completedYears, dateKey, daysInMonth, formatMemoryDate, generateLifeMonths, horizonYearsForBirthDate, isLeapYear, minimumBirthDate, monthKey, parseDate, parseMonth, todayInZone, validateBirthDate, validateNewBirthDate } from '../src/domain/dates.mjs';
 import { isMemoryVisible, LIMITS, matchesMemory, normalizeTags, singleLineDescription, validateMemory } from '../src/domain/memories.mjs';
 import { monthNavigation } from '../src/domain/month-navigation.mjs';
 
@@ -129,6 +129,33 @@ export const cases = [
   }],
   ['Future and invalid birth dates are rejected', () => {
     assert.throws(() => validateBirthDate('2026-10-20', today)); assert.throws(() => validateBirthDate('2025-02-29', today)); assert.equal(validateBirthDate(today, today), today);
+  }],
+  ['New profiles accept the entire current-year-minus-99 birth year and reject earlier years', () => {
+    assert.equal(minimumBirthDate(today), '1927-01-01');
+    for (const value of ['1927-01-01', '1927-12-31', '1936-02-29', today]) {
+      assert.equal(validateNewBirthDate(value, today), value);
+    }
+    for (const value of ['1000-01-01', '1926-12-31']) {
+      assert.throws(() => validateNewBirthDate(value, today), /1927/);
+    }
+    assert.throws(() => validateNewBirthDate('2026-10-20', today), /futuro/);
+    assert.throws(() => validateNewBirthDate('1955-02-29', today), /válida/);
+    assert.equal(minimumBirthDate('2027-01-01'), '1928-01-01');
+    assert.throws(() => validateNewBirthDate('1927-12-31', '2027-01-01'), /1928/);
+  }],
+  ['New profiles use a 100-year horizon from 70 through 99 calendar years of age', () => {
+    for (const value of ['1927-01-01', '1927-12-31', '1956-01-01', '1956-12-31']) {
+      const horizon = horizonYearsForBirthDate(value, today);
+      assert.equal(horizon, 100);
+      const months = generateLifeMonths(value, today, horizon);
+      assert.equal(months.length, 1200);
+      assert.equal(months.filter(month => month.state === 'current').length, 1);
+    }
+    for (const value of ['1957-01-01', '1957-12-31', '2000-01-01', today]) {
+      assert.equal(horizonYearsForBirthDate(value, today), 80);
+    }
+    assert.throws(() => horizonYearsForBirthDate('1926-12-31', today), /1927/);
+    assert.equal(horizonYearsForBirthDate('1957-12-31', '2027-01-01'), 100);
   }],
   ['Age changes on the birthday and leap-day age changes on March 1 in common years', () => {
     assert.equal(completedYears(birth, '2026-11-29'), 25); assert.equal(completedYears(birth, '2026-11-30'), 26);

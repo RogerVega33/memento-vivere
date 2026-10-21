@@ -65,7 +65,7 @@ test('tags can be saved and edited, and search highlights only matching months',
   await options.press('Tab');
   await expect(page.getByRole('button', { name: 'Editar Primer día' })).toBeFocused();
   await page.getByRole('button', { name: 'Editar Primer día' }).click();
-  await expect(page.getByLabel('Etiquetas opcional', { exact: true })).toHaveAttribute('placeholder', 'Viajes, Familia, Amigos, Logros, Historias, ...');
+  await expect(page.getByLabel('Etiquetas', { exact: true })).toHaveAttribute('placeholder', 'Viajes, Familia, Amigos, Logros, Historias, ...');
   await expect(page.getByText('Sin saltos de línea.', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Quitar fotografía guardada 1' }).click();
   await page.getByRole('button', { name: 'Guardar recuerdo' }).click();
@@ -75,14 +75,14 @@ test('tags can be saved and edited, and search highlights only matching months',
   expect(memories[0].photoIds).toEqual([]);
   await page.getByRole('button', { name: 'Añadir recuerdo' }).click();
   await page.getByLabel('Título').fill('Con mis compañeros');
-  await page.getByLabel('Etiquetas opcional', { exact: true }).fill(' trabajo , empresa   A, , TRABAJO, ');
+  await page.getByLabel('Etiquetas', { exact: true }).fill(' trabajo , empresa   A, , TRABAJO, ');
   await page.getByRole('button', { name: 'Guardar recuerdo' }).click();
   const added = page.locator('.memory-card').filter({ has: page.getByRole('heading', { name: 'Con mis compañeros', exact: true }) });
   await expect(added.locator('.memory-tags li')).toHaveText(['trabajo', 'empresa A']);
   await page.getByRole('button', { name: 'Opciones de Con mis compañeros', exact: true }).click();
   await page.getByRole('button', { name: 'Editar Con mis compañeros' }).click();
-  await expect(page.getByLabel('Etiquetas opcional', { exact: true })).toHaveValue('trabajo, empresa A');
-  await page.getByLabel('Etiquetas opcional', { exact: true }).fill('amistad');
+  await expect(page.getByLabel('Etiquetas', { exact: true })).toHaveValue('trabajo, empresa A');
+  await page.getByLabel('Etiquetas', { exact: true }).fill('amistad');
   await page.getByRole('button', { name: 'Guardar recuerdo' }).click();
   await expect(added.locator('.memory-tags li')).toHaveText(['amistad']);
 

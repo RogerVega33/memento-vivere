@@ -22,6 +22,7 @@ function fixture(initialState = { __NA: true, tree: ['fictional-next-tree'] }) {
     },
     back() { backCalls++; pending.push(-1); },
     forward() { pending.push(1); },
+    go(delta) { pending.push(delta); },
   };
   const browser = {
     history,
@@ -136,4 +137,103 @@ test('the base screen does not trap Back or add entries during initial load', ()
   f.browser.history.back(); f.flush();
   assert.equal(f.index, 0, 'Back on the root screen retains normal browser behavior');
   controller.dispose();
+});
+
+test('Back unwinds fullscreen and the photo viewer separately, without leaving the app', () => {
+  const f = fixture();
+  const changes = [];
+  const controller = createPanelHistory(f.browser, {
+    initial: 'closed', panels: ['closed', 'viewer', 'fullscreen'], stacked: true, onChange: panel => changes.push(panel),
+  });
+  controller.navigate('viewer');
+  controller.navigate('fullscreen');
+  assert.equal(f.index, 3);
+  f.browser.history.back(); f.flush();
+  assert.equal(f.index, 2);
+  assert.equal(changes.at(-1), 'viewer');
+  f.browser.history.back(); f.flush();
+  assert.equal(f.index, 1);
+  assert.equal(changes.at(-1), 'closed');
+  f.browser.history.forward(); f.flush();
+  assert.equal(changes.at(-1), 'viewer');
+  f.browser.history.forward(); f.flush();
+  assert.equal(changes.at(-1), 'fullscreen');
+  controller.dispose();
+});
+
+test('fullscreen exit and viewer close consume their entries without leaving stale screens', () => {
+  const f = fixture();
+  const changes = [];
+  const controller = createPanelHistory(f.browser, {
+    initial: 'closed', panels: ['closed', 'viewer', 'fullscreen'], stacked: true, onChange: panel => changes.push(panel),
+  });
+  controller.navigate('viewer');
+  controller.navigate('fullscreen');
+  controller.navigate('viewer'); controller.navigate('viewer'); f.flush();
+  assert.equal(f.index, 2);
+  assert.equal(changes.at(-1), 'viewer');
+  controller.navigate('fullscreen');
+  assert.equal(f.entries.length, 4);
+  controller.navigate('closed'); controller.navigate('closed'); f.flush();
+  assert.equal(f.index, 1, 'closing fullscreen directly also stays on the app');
+  assert.equal(changes.at(-1), 'closed');
+  controller.navigate('viewer');
+  assert.equal(f.entries.length, 3, 'reopening replaces the previous forward stack');
+  assert.equal(f.browser.history.state.__NA, true);
+  assert.deepEqual(Object.keys(f.browser.history.state.mementoPanel).sort(), ['depth', 'owner', 'panel']);
+  controller.dispose();
+});
+
+test('a directly opened nested panel only consumes entries that were actually added', () => {
+  const f = fixture();
+  const changes = [];
+  const controller = createPanelHistory(f.browser, {
+    initial: 'closed', panels: ['closed', 'viewer', 'fullscreen'], stacked: true, onChange: panel => changes.push(panel),
+  });
+  controller.navigate('fullscreen');
+  controller.navigate('closed'); f.flush();
+  assert.equal(f.index, 1);
+  assert.equal(changes.at(-1), 'closed');
+  controller.dispose();
+});
+
+test('photo and account panels can share the browser history without reopening each other', () => {
+  const f = fixture();
+  const accountChanges = [];
+  const photoChanges = [];
+  const account = createPanelHistory(f.browser, {
+    initial: 'closed', panels: ['closed', 'password'], onChange: panel => accountChanges.push(panel),
+  });
+  const photos = createPanelHistory(f.browser, {
+    initial: 'closed', panels: ['closed', 'viewer', 'fullscreen'], stacked: true, onChange: panel => photoChanges.push(panel),
+  });
+  photos.navigate('viewer');
+  photos.navigate('fullscreen');
+  f.browser.history.back(); f.flush();
+  f.browser.history.back(); f.flush();
+  assert.equal(f.index, 1);
+  assert.deepEqual(accountChanges, []);
+  account.navigate('password');
+  account.navigate('closed'); f.flush();
+  assert.equal(f.index, 1);
+  assert.deepEqual(accountChanges, ['password', 'closed']);
+  assert.deepEqual(photoChanges, ['viewer', 'fullscreen', 'viewer', 'closed']);
+  photos.dispose(); account.dispose();
+});
+
+test('a new photo scope ignores forward entries owned by the previous month', () => {
+  const f = fixture();
+  const options = { initial: 'closed', panels: ['closed', 'viewer', 'fullscreen'], stacked: true };
+  const previous = createPanelHistory(f.browser, { ...options, onChange() {} });
+  previous.navigate('viewer');
+  f.browser.history.back(); f.flush();
+  previous.dispose();
+  const changes = [];
+  const current = createPanelHistory(f.browser, { ...options, onChange: panel => changes.push(panel) });
+  f.browser.history.forward(); f.flush();
+  assert.deepEqual(changes, [], 'Forward must not reopen photos from a different month');
+  current.navigate('viewer');
+  current.navigate('closed'); f.flush();
+  assert.deepEqual(changes, ['viewer', 'closed']);
+  current.dispose();
 });

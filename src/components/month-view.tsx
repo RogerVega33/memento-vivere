@@ -10,6 +10,8 @@ import { Dialog } from './dialog';
 import { MemoryCard } from './memory-card';
 import { PhotoViewer } from './photo-viewer';
 import { createLatestRequest } from './latest-request.mjs';
+import { useHistoryPanel } from './use-history-panel';
+const photoPanels = ['closed', 'viewer', 'fullscreen'] as const;
 export function MonthView({ month, state, revision, paused, query, onNavigate, onAdd, onEdit, onChanged }: {
   month: string;
   state: Snapshot & {
@@ -30,6 +32,7 @@ export function MonthView({ month, state, revision, paused, query, onNavigate, o
   const [busy, setBusy] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [onlyWithMemories, setOnlyWithMemories] = useState(false);
+  const [photoPanel, navigatePhoto] = useHistoryPanel('closed', photoPanels, { stacked: true, scope: month });
   const [lightbox, setLightbox] = useState<{
     photoIds: string[];
     title: string;
@@ -153,9 +156,7 @@ export function MonthView({ month, state, revision, paused, query, onNavigate, o
       <h3>
         {query.trim() ? 'No hay recuerdos que coincidan en este mes.' : 'Este mes todavía no tiene recuerdos.'}
       </h3>
-      <p>
-        {query.trim() ? 'Prueba otra palabra o limpia la búsqueda para ver todos los recuerdos.' : 'Una conversación, un viaje, un día cualquiera. ¿Qué te gustaría guardar?'}
-      </p>
+      {query.trim() && <p>Prueba otra palabra o limpia la búsqueda para ver todos los recuerdos.</p>}
     </section>) : (<div className="memory-list">
       {filtered.map(memory => (<MemoryCard
         key={memory.id}
@@ -165,7 +166,10 @@ export function MonthView({ month, state, revision, paused, query, onNavigate, o
           setDeleteError('');
           setDeleting(entry);
         }}
-        onPhoto={(entry, index) => setLightbox({ photoIds: [...entry.photoIds], title: entry.title, index })}
+        onPhoto={(entry, index) => {
+          setLightbox({ photoIds: [...entry.photoIds], title: entry.title, index });
+          navigatePhoto('viewer');
+        }}
       />))}
     </div>)}
     {deleting && <Dialog
@@ -187,11 +191,13 @@ export function MonthView({ month, state, revision, paused, query, onNavigate, o
         </button>
       </div>
     </Dialog>}
-    {lightbox && <PhotoViewer
+    {lightbox && photoPanel !== 'closed' && <PhotoViewer
       title={lightbox.title}
       photoIds={lightbox.photoIds}
       initialIndex={lightbox.index}
-      onClose={() => setLightbox(null)}
+      fullscreen={photoPanel === 'fullscreen'}
+      onFullscreenChange={value => navigatePhoto(value ? 'fullscreen' : 'viewer')}
+      onClose={() => navigatePhoto('closed')}
     />}
   </section>;
 }
