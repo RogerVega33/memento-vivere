@@ -272,10 +272,9 @@ textarea { resize: vertical; line-height: 1.7; }
 .memory-photos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
 .memory-photos[data-count='1'] { grid-template-columns: 1fr; }
 .memory-photos[data-count='2'] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.memory-photo { position: relative; min-width: 0; border: 0; background: var(--surface-soft); border-radius: 11px; overflow: hidden; padding: 0; aspect-ratio: 4 / 3; }
+.memory-photo { position: relative; min-width: 0; border: 0; background: transparent; border-radius: 11px; overflow: hidden; padding: 0; aspect-ratio: 4 / 3; }
 .memory-photos[data-count='1'] > .memory-photo { aspect-ratio: 16 / 9; max-height: 280px; }
-.memory-photo > img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .2s; }
-.memory-photo:hover > img { transform: scale(1.04); }
+.memory-photo > img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .memory-tags { display: flex; flex-wrap: wrap; gap: 7px; list-style: none; padding: 0; margin: 16px 0 0; }
 .memory-tags > li { max-width: 100%; padding: 5px 13px; border-radius: 999px; background: var(--tag-bg); color: var(--tag-ink); font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
 .dialog { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 13px; padding: 27px 32px; max-width: 590px; width: calc(100% - 32px); max-height: calc(100dvh - 48px); overflow-y: auto; box-shadow: 0 30px 100px #00000030; }
