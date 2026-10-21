@@ -2,7 +2,7 @@
 
 La aplicación utiliza PostgreSQL 18 con UTF-8. Compose ejecuta `database` y `app` en contenedores separados, con el volumen `memento-vivere_postgres_data` para los datos.
 
-Los comandos de esta guía son para ejecución manual desde la raíz del proyecto y utilizan `compose.yaml`.
+Los comandos de esta guía son para ejecución manual desde la raíz del proyecto y utilizan `compose.yaml`. Si usas la imagen publicada, añade `-f compose.prod.yaml` después de `docker compose`; ambos archivos conservan el mismo nombre de proyecto y volumen.
 
 ## Configuración
 

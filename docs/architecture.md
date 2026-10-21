@@ -30,6 +30,8 @@ Tanto en desarrollo como en Docker, `server.mjs` prepara la base antes de acepta
 | `src/components/pwa/`, `pwa/service-worker.js` y `scripts/pwa.mjs` | Instalación, actualizaciones voluntarias y caché de la interfaz pública versionada al compilar. |
 | `db/001_initial.sql` | Esquema, índices, vista de recuerdos visibles y triggers. |
 | `tests/` | Pruebas de dominio, rutas, repositorios, imágenes e interfaz. |
+| `.github/workflows/docker-publish.yml` | Compilación y publicación de la imagen en Docker Hub al actualizar `master`. |
+| `compose.yaml` y `compose.prod.yaml` | Ejecución con compilación local o con la imagen publicada, respectivamente. |
 
 ## Flujo de una operación
 

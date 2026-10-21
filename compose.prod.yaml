@@ -1,0 +1,54 @@
+name: memento-vivere
+
+services:
+  app:
+    image: rogervega33/memento-vivere:latest
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      PGHOST: database
+      PGPORT: "5432"
+      PGDATABASE: "${PGDATABASE:?Define PGDATABASE antes de iniciar la aplicación}"
+      PGUSER: "${PGUSER:?Define PGUSER antes de iniciar la aplicación}"
+      PGPASSWORD: "${PGPASSWORD:?Define PGPASSWORD antes de iniciar la aplicación}"
+      TRUSTED_PROXY_IP: "${TRUSTED_PROXY_IP:-}"
+    depends_on:
+      database:
+        condition: service_healthy
+    init: true
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  database:
+    image: postgres:18
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      POSTGRES_USER: "${PGUSER:?Define PGUSER antes de iniciar PostgreSQL}"
+      POSTGRES_DB: "${PGDATABASE:?Define PGDATABASE antes de iniciar PostgreSQL}"
+      POSTGRES_PASSWORD: "${PGPASSWORD:?Define PGPASSWORD antes de iniciar PostgreSQL}"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      start_period: 10s
+      retries: 10
+
+volumes:
+  postgres_data:

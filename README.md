@@ -58,29 +58,36 @@ Memento Vivere es un proyecto independiente inspirado conceptualmente en esta vi
 
 ## Instalación
 
-Requiere Docker, Docker Compose y el repositorio descargado. Desde la raíz del proyecto:
+Requiere Docker y Docker Compose. Descarga [compose.prod.yaml](compose.prod.yaml) y [.env.example](.env.example) en una misma carpeta; no necesitas clonar el repositorio ni compilar.
 
 1. Copia [.env.example](.env.example) como `.env` y configura `PGDATABASE`, `PGUSER` y una contraseña segura en `PGPASSWORD`.
-2. Compila e inicia la aplicación y PostgreSQL:
+2. Desde esa carpeta inicia la aplicación y PostgreSQL:
 
    ```bash
-   docker compose up -d --build
+   docker compose -f compose.prod.yaml up -d
    ```
 
 Abre [http://localhost:3000](http://localhost:3000) o `http://IP_DEL_SERVIDOR:3000` desde otro dispositivo. Puedes cambiar el puerto publicado mediante `APP_PORT`.
 
 La base y el esquema se crean automáticamente al iniciar con una base vacía. Los datos se conservan en el volumen `memento-vivere_postgres_data`.
 
-Después de actualizar el código, ejecuta el mismo comando para reconstruir y actualizar la aplicación, conservando los datos. Para detener ambos servicios:
+Para descargar una nueva versión y actualizar los contenedores, conservando los datos:
 
 ```bash
-docker compose stop
+docker compose -f compose.prod.yaml pull
+docker compose -f compose.prod.yaml up -d
+```
+
+Para detener ambos servicios:
+
+```bash
+docker compose -f compose.prod.yaml stop
 ```
 
 Para consultar los últimos 100 registros de la aplicación y seguir los nuevos en tiempo real:
 
 ```bash
-docker compose logs -f --tail=100 app
+docker compose -f compose.prod.yaml logs -f --tail=100 app
 ```
 
 ### HTTPS con proxy inverso
@@ -93,7 +100,20 @@ Dirige el proxy al puerto de la aplicación (`3000` por defecto) y configura est
 | `X-Forwarded-Host` | Tu dominio público, con puerto si corresponde. | Reconocer el dominio público. |
 | `X-Forwarded-For` | La IP del cliente, por ejemplo `$remote_addr` en Nginx. | Limitar los intentos de acceso por IP. |
 
-Define `TRUSTED_PROXY_IP` en `.env` con la IP exacta desde la que el proxy llega al contenedor. La aplicación solo acepta esas cabeceras desde esa dirección y espera una única IP en `X-Forwarded-For`. Restringe el acceso al puerto de la aplicación para que solo pueda conectarse el proxy.
+Define `TRUSTED_PROXY_IP` en `.env` con la IP exacta desde la que el proxy llega al contenedor. La aplicación solo acepta esas cabeceras desde esa dirección y espera una única IP en `X-Forwarded-For`.
+
+En los logs, `peerIp` identifica la conexión directa; `clientIp` aparece cuando el proxy autorizado envía una IP válida y distinta en `X-Forwarded-For`.
+
+Si el proxy se ejecuta en el servidor anfitrión, esa dirección puede ser la puerta de enlace de Docker. Con la red del proyecto creada, puedes consultarla:
+
+```bash
+sudo docker network ls --format '{{.Name}}'
+sudo docker network inspect memento-vivere_default --format '{{range .IPAM.Config}}{{println .Gateway}}{{end}}'
+```
+
+Ajusta el nombre si tu red es diferente. Si devuelve `172.20.0.1` y coincide con el `peerIp` del proxy, usa `TRUSTED_PROXY_IP=172.20.0.1`. Si el proxy está en otro contenedor, utiliza la IP de ese contenedor.
+
+Compose transmite la variable automáticamente; no necesitas modificar `command`. Después de configurarla, aplica el cambio con `docker compose -f compose.prod.yaml up -d`. En HTTPS, restringe el acceso al puerto de la aplicación (`3000` por defecto) para que solo pueda conectarse el proxy.
 
 Inicio de sesión, registro, recuperación y cambio de contraseña comparten un límite de 20 solicitudes cada 15 minutos por IP. Login y recuperación tienen además límites por usuario.
 
@@ -109,7 +129,7 @@ Configura `.env` como se indica en Instalación. Puedes trabajar de estas dos fo
 
 ### Todo con Docker
 
-Utiliza el mismo comando de instalación después de modificar el código:
+Para compilar y ejecutar desde el código fuente:
 
 ```bash
 docker compose up -d --build
