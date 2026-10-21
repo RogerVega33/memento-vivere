@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { isIP } from 'node:net';
 import { RepositoryError } from '../domain/errors.mjs';
+import { log, newRequestContext, requestContext } from './logger.mjs';
 
 /** @typedef {{ip:string, peerIp:string, secure:boolean, host:string}} Network */
 const scope = /** @type {typeof globalThis & {mementoNetwork?: AsyncLocalStorage<Network>}} */ (globalThis);
@@ -70,17 +71,83 @@ export function prepareNetwork(request, proxy) {
 /** @template T @param {Network} network @param {() => T} action */
 export function withNetwork(network, action) { return context.run(network, action); }
 
+/** Count body bytes passed to Node, including streamed/compressed chunks, without
+ * retaining their contents. Headers and HTTP framing are excluded.
+ * @param {import('node:http').ServerResponse} response @param {string} [method] */
+function responseSize(response, method) {
+  let bytes = 0;
+  for (const name of /** @type {const} */ (['write', 'end'])) {
+    const original = response[name];
+    /** @this {import('node:http').ServerResponse} @param {unknown[]} args */
+    const measured = function (...args) {
+      let length = 0;
+      if (!this.writableEnded && !this.destroyed) {
+        const chunk = args[0];
+        if (typeof chunk === 'string') length = Buffer.byteLength(chunk,
+          typeof args[1] === 'string' ? /** @type {BufferEncoding} */ (args[1]) : 'utf8');
+        else if (chunk instanceof Uint8Array) length = chunk.byteLength;
+      }
+      bytes += length;
+      try { return Reflect.apply(original, this, args); }
+      catch (error) { bytes -= length; throw error; }
+    };
+    response[name] = measured;
+  }
+  return () => method === 'HEAD' || response.statusCode < 200 || [204, 304].includes(response.statusCode) ? 0 : bytes;
+}
+
 /** HTTP boundary shared by development and production; no listener is opened here.
  * @param {(request:import('node:http').IncomingMessage, response:import('node:http').ServerResponse) => Promise<unknown>} handle
  * @param {string|null} proxy */
 export function networkHandler(handle, proxy) {
   /** @param {import('node:http').IncomingMessage} request @param {import('node:http').ServerResponse} response */
   return async (request, response) => {
-    try { await withNetwork(prepareNetwork(request, proxy), () => handle(request, response)); }
-    catch (error) {
-      if (response.headersSent) { response.destroy(); return; }
-      response.writeHead(error instanceof RepositoryError ? error.status : 500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-      response.end(JSON.stringify({ error: error instanceof RepositoryError ? error.message : 'No se pudo completar la solicitud.' }));
-    }
+    const context = newRequestContext(request.method, request.url);
+    context.boundary = true;
+    await requestContext.run(context, async () => {
+      const started = performance.now();
+      const health = context.route === '/api/health' && ['GET', 'HEAD'].includes(context.method);
+      const durationMs = () => Math.round(performance.now() - started);
+      let completed = false;
+      let startedLogged = false;
+      const responseBytes = responseSize(response, request.method);
+      response.setHeader('X-Request-Id', context.requestId);
+      // Log the actual response lifecycle, including streams and framework 404/500s.
+      const finish = () => requestContext.run(context, () => {
+        if (completed) return;
+        completed = true;
+        if (health && response.statusCode >= 200 && response.statusCode < 300) return;
+        log(response.statusCode >= 500 ? 'error' : response.statusCode >= 400 ? 'warn' : 'info', 'request.completed',
+          { status: response.statusCode, durationMs: durationMs(), responseBytes: responseBytes() });
+      });
+      const abort = () => requestContext.run(context, () => {
+        if (completed) return;
+        completed = true;
+        log('warn', 'request.aborted', { durationMs: durationMs(), responseBytes: responseBytes() });
+      });
+      response.once('finish', finish);
+      response.once('close', abort);
+      request.once('aborted', abort);
+      response.once('timeout', () => requestContext.run(context, () => log('warn', 'request.timeout', { durationMs: durationMs(), responseBytes: responseBytes() })));
+      response.once('error', error => requestContext.run(context, () => log('error', 'request.failed', { error, durationMs: durationMs() })));
+      try {
+        context.peerIp = normalizeIp(request.socket.remoteAddress ?? '') ?? undefined;
+        const network = prepareNetwork(request, proxy);
+        Object.assign(context, { clientIp: network.ip, peerIp: network.peerIp, protocol: network.secure ? 'https' : 'http' });
+        const length = request.headers['content-length'];
+        if (!health) {
+          log('info', 'request.started', { requestBytes: typeof length === 'string' && /^\d+$/.test(length) ? Number(length) : undefined });
+          startedLogged = true;
+        }
+        await withNetwork(network, () => handle(request, response));
+      } catch (error) {
+        const status = error instanceof RepositoryError ? error.status : 500;
+        if (!health && !startedLogged) log('info', 'request.started');
+        log(status >= 500 ? 'error' : 'warn', 'request.failed', { status, error });
+        if (response.headersSent) { response.destroy(); return; }
+        response.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+        response.end(JSON.stringify({ error: error instanceof RepositoryError ? error.message : 'No se pudo completar la solicitud.' }));
+      }
+    });
   };
 }

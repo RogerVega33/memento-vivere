@@ -115,7 +115,11 @@ test('startup failure closes the temporary pool and does not expose SQL diagnost
       async prepare() { throw Object.assign(new Error(`private SQL ${environment.PGPASSWORD}`), { code: '42501' }); },
     }), /No se pudo preparar PostgreSQL/);
     assert.equal(closed, true);
-    assert.deepEqual(logs.map(value => JSON.parse(value)), [{ event: 'database.prepare_failed', code: '42501' }]);
+    const entries = logs.map(value => JSON.parse(value));
+    assert.deepEqual(entries.map(entry => entry.event), ['database.prepare_failed', 'database.close_failed']);
+    assert.deepEqual(entries[0].error, { name: 'DatabaseError', code: '42501' });
+    assert.doesNotMatch(logs.join(''), /private SQL|fictional close failure/);
+    assert(!logs.join('').includes(environment.PGPASSWORD));
   } finally { console.error = original; }
 });
 

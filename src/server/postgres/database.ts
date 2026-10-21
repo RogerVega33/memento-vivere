@@ -1,4 +1,5 @@
 import type { SqlClient, SqlPool } from '../contracts';
+import { log } from '../logger.mjs';
 export { lazyPool } from './driver.mjs';
 
 export function sqlCode(error: unknown): string | undefined {
@@ -19,8 +20,12 @@ export class Database {
         await client.query('COMMIT');
         return result;
       } catch (error) {
-        try { await client.query('ROLLBACK'); } catch { broken = true; }
-        if (!broken && ['40001', '40P01'].includes(sqlCode(error) ?? '') && attempt < 2) continue;
+        try { await client.query('ROLLBACK'); }
+        catch (rollbackError) { broken = true; log('error', 'database.rollback_failed', { error: rollbackError }); }
+        if (!broken && ['40001', '40P01'].includes(sqlCode(error) ?? '') && attempt < 2) {
+          log('warn', 'database.transaction_retry', { attempt: attempt + 1, error });
+          continue;
+        }
         throw error;
       } finally { client.release(broken); }
     }

@@ -1,6 +1,6 @@
 import { access } from 'node:fs/promises';
 import { constants } from 'node:fs';
-import { errorDetails, log } from './logger.mjs';
+import { log } from './logger.mjs';
 
 /** Next.js invokes instrumentation once for each server process. */
 export async function registerServerLogging() {
@@ -12,8 +12,20 @@ export async function registerServerLogging() {
     try { await access(executable, constants.X_OK); }
     catch { log('error', 'server.dependency.missing', { executable }); }
   }
-  // Monitor without replacing Node's normal crash behavior.
-  process.on('uncaughtExceptionMonitor', (error, origin) => log('error', 'server.crashed', { origin, error: errorDetails(error) }));
-  process.on('warning', warning => log('warn', 'server.warning', { error: errorDetails(warning) }));
+  process.on('warning', warning => log('warn', 'server.warning', { error: warning }));
   process.once('exit', code => log(code ? 'error' : 'info', 'server.exited', { code }));
+}
+
+/** Preserve fatal exit behavior without Node printing an unsanitized stack.
+ * Installed only by the HTTP entry point, never by builds or route imports.
+ * @param {Pick<NodeJS.Process, 'on'|'exit'>} [target] */
+export function registerFatalLogging(target = process) {
+  target.on('uncaughtException', (error, origin) => {
+    log('error', 'server.crashed', { error, origin });
+    target.exit(1);
+  });
+  target.on('unhandledRejection', error => {
+    log('error', 'server.crashed', { error, origin: 'unhandledRejection' });
+    target.exit(1);
+  });
 }

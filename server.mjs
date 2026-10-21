@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import next from 'next';
 import { prepareDatabase } from './src/server/postgres/initialize.mjs';
 import { networkHandler, trustedProxyIp } from './src/server/request-network.mjs';
+import { installConsoleLogging, log } from './src/server/logger.mjs';
+import { registerFatalLogging } from './src/server/startup.mjs';
 
 /** @param {string[]} args @param {Record<string,string|undefined>} environment */
 export function serverOptions(args, environment) {
@@ -20,6 +22,9 @@ export function serverOptions(args, environment) {
 }
 
 async function start() {
+  installConsoleLogging();
+  registerFatalLogging();
+  log('info', 'server.starting');
   const options = serverOptions(process.argv.slice(2), process.env);
   const server = createServer();
   const app = next({ ...options, httpServer: server });
@@ -36,20 +41,28 @@ async function start() {
   }
   const handle = app.getRequestHandler();
   server.on('request', networkHandler(handle, proxy));
-  server.on('error', () => { console.error('No se pudo iniciar el servidor HTTP.'); process.exitCode = 1; void app.close(); });
-  server.listen(options.port, options.hostname);
+  server.on('error', error => {
+    log('error', 'server.start_failed', { error });
+    process.exitCode = 1;
+    void app.close().catch(error => log('error', 'server.shutdown_failed', { error }));
+  });
+  server.listen(options.port, options.hostname, () => log('info', 'server.ready', { port: options.port }));
   let closing = false;
   const close = () => {
     if (closing) return;
     closing = true;
-    const deadline = setTimeout(() => process.exit(1), 25000);
+    log('info', 'server.stopping');
+    const deadline = setTimeout(() => { log('error', 'server.shutdown_failed'); process.exit(1); }, 25000);
     deadline.unref();
-    server.close(() => { void app.close().then(() => { clearTimeout(deadline); }); });
+    server.close(() => {
+      void app.close().then(() => { clearTimeout(deadline); log('info', 'server.stopped'); })
+        .catch(error => { log('error', 'server.shutdown_failed', { error }); process.exitCode = 1; clearTimeout(deadline); });
+    });
   };
   process.on('SIGTERM', close);
   process.on('SIGINT', close);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  await start().catch(() => { console.error('No se pudo preparar el servidor. Revisa la configuración y el esquema PostgreSQL.'); process.exitCode = 1; });
+  await start().catch(error => { log('error', 'server.start_failed', { error }); process.exitCode = 1; });
 }

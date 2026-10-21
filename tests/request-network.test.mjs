@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { prepareNetwork, networkHandler, normalizeIp, trustedProxyIp, networkContext, withNetwork } from '../src/server/request-network.mjs';
 import { loadComponent } from './component-render.mjs';
+import { HttpResponse, incoming } from './http-fixtures.mjs';
 const { sessionCookie } = loadComponent('src/server/auth-http.ts');
 const { requireSameOrigin } = loadComponent('src/server/http.mjs');
 const { networkContext: compiledContext } = loadComponent('src/server/request-network.mjs');
-const incoming = (ip = '203.0.113.5', headers = {}) => ({ socket: { remoteAddress: ip }, headers: { host: 'internal:3000', ...headers } });
 
 test('direct clients use their socket IP and cannot spoof forwarded IP, protocol or host', () => {
   const request = incoming('::ffff:203.0.113.5', { 'x-forwarded-for': '198.51.100.2', 'x-forwarded-proto': 'https',
@@ -67,8 +67,7 @@ test('verified proxy HTTPS creates Secure cookies and origin checks use the publ
 });
 
 test('HTTP entry runs the handler with verified identity and sanitizes unexpected failures', async () => {
-  let status, body;
-  const response = { headersSent: false, writeHead(code) { status = code; }, end(value) { body = value; } };
+  const response = new HttpResponse();
   const handle = networkHandler(async request => {
     await Promise.resolve();
     assert.equal(networkContext().ip, '203.0.113.5');
@@ -76,16 +75,16 @@ test('HTTP entry runs the handler with verified identity and sanitizes unexpecte
     throw new Error('fictional private database message');
   }, null);
   await handle(incoming('203.0.113.5', { 'x-forwarded-for': '198.51.100.2' }), response);
-  assert.equal(status, 500);
-  assert.doesNotMatch(body, /private|database/);
+  assert.equal(response.statusCode, 500);
+  assert.doesNotMatch(response.body, /private|database/);
   assert.equal(networkContext(), undefined);
 });
 
 test('invalid proxy metadata is rejected at the HTTP entry before any route executes', async () => {
-  let called = false, status;
+  let called = false;
   const handle = networkHandler(async () => { called = true; }, '192.0.2.10');
-  const response = { headersSent: false, writeHead(code) { status = code; }, end() {} };
+  const response = new HttpResponse();
   await handle(incoming('192.0.2.10', { 'x-forwarded-for': 'spoofed' }), response);
   assert.equal(called, false);
-  assert.equal(status, 400);
+  assert.equal(response.statusCode, 400);
 });

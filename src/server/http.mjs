@@ -2,8 +2,7 @@ import { RepositoryError } from '../domain/errors.mjs';
 import { networkContext } from './request-network.mjs';
 import { LIMITS } from '../domain/memories.mjs';
 import { ValidationError } from '../domain/errors.mjs';
-import { randomUUID } from 'node:crypto';
-import { errorDetails, log, requestContext } from './logger.mjs';
+import { log, newRequestContext, requestContext } from './logger.mjs';
 
 /** @param {unknown} data @param {number} [status] */
 export function json(data, status = 200) {
@@ -12,11 +11,10 @@ export function json(data, status = 200) {
 
 /** @param {() => Promise<Response> | Response} action @param {Request} [request] */
 export async function handle(action, request) {
-  const requestId = randomUUID();
-  return requestContext.run({ requestId }, async () => {
+  const context = requestContext.getStore() ?? newRequestContext(request?.method, request ? new URL(request.url).pathname : undefined);
+  return requestContext.run(context, async () => {
     const started = performance.now();
-    const route = request ? new URL(request.url).pathname.replace(/(\/api\/(?:memories|photos))\/[^/]+/g, '$1/:id') : undefined;
-    log('info', 'request.started', { method: request?.method, route });
+    if (!context.boundary) log('info', 'request.started');
     let response;
     try { response = await action(); }
     catch (error) {
@@ -26,10 +24,10 @@ export async function handle(action, request) {
       }
       else if (error instanceof ValidationError) response = json({ error: error.message }, 400);
       else response = json({ error: 'No se pudo completar la operación.' }, 500);
-      log(response.status >= 500 ? 'error' : 'warn', 'request.failed', { status: response.status, error: errorDetails(error) });
+      log(response.status >= 500 ? 'error' : 'warn', 'request.failed', { status: response.status, error });
     }
-    response.headers.set('X-Request-Id', requestId);
-    log('info', 'request.completed', { status: response.status, durationMs: Math.round(performance.now() - started) });
+    response.headers.set('X-Request-Id', context.requestId);
+    if (!context.boundary) log('info', 'request.completed', { status: response.status, durationMs: Math.round(performance.now() - started) });
     return response;
   });
 }

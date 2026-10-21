@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { log } from '../logger.mjs';
 
 // Fixed identifiers only. Probes read no account, memory or photo values.
 const columns = {
@@ -44,7 +45,8 @@ export async function prepareSchema(pool, loadSchema = loadInitialSchema) {
     await client.query('COMMIT');
     return { created };
   } catch (error) {
-    try { await client.query('ROLLBACK'); } catch { broken = true; }
+    try { await client.query('ROLLBACK'); }
+    catch (rollbackError) { broken = true; log('error', 'database.rollback_failed', { error: rollbackError }); }
     throw error;
   } finally { client.release(broken); }
 }

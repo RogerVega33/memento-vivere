@@ -68,11 +68,11 @@ export function MonthView({ month, state, revision, paused, query, onNavigate, o
       if (document.visibilityState === 'visible')
         void refresh();
     }
-    const interval = setInterval(sync, 15000);
     window.addEventListener('focus', sync);
+    document.addEventListener('visibilitychange', sync);
     return () => {
-      clearInterval(interval);
       window.removeEventListener('focus', sync);
+      document.removeEventListener('visibilitychange', sync);
     };
   }, [refresh, paused, deleting]);
   async function remove() {

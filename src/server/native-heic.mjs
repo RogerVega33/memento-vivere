@@ -39,9 +39,11 @@ export async function runHeicDecoder(inputPath, outputPath, options = {}) {
     const failure = /** @type {Error & {code?: string | number, signal?: string, killed?: boolean, stderr?: string}} */ (error);
     log('error', 'heic.decode.failed', {
       durationMs: Math.round(performance.now() - started),
-      code: failure.code, signal: failure.signal, killed: failure.killed ?? false,
-      // The CLI only receives generated temporary paths, never user filenames.
-      diagnostic: failure.stderr?.slice(0, 2000),
+      error, code: failure.code, signal: failure.signal, killed: failure.killed ?? false,
+      // Native stderr can include image metadata or paths; retain only a category.
+      reason: failure.code === 'ENOENT' || failure.code === 127 ? 'unavailable'
+        : failure.killed ? 'timeout' : /memory|alloc|resource/i.test(failure.stderr ?? '') ? 'resource'
+          : failure.signal ? 'signal' : 'decode',
     });
     if (failure.code === 'ENOENT' || failure.code === 127) {
       throw new RepositoryError('El conversor HEIC no está disponible en el servidor.', 503);

@@ -6,7 +6,7 @@ import { todayInZone } from '@/domain/dates.mjs';
 import { requireAccount } from './auth-http';
 import { parseJson, readFormData, requireSameOrigin } from './http.mjs';
 import { optimizePhoto } from './images.mjs';
-import { errorDetails, log } from './logger.mjs';
+import { log } from './logger.mjs';
 
 // Serialize expensive image processing. Final repository.save also validates
 // revision, birth date and today's date after asynchronous processing completes.
@@ -48,7 +48,7 @@ export async function saveMemory(request: Request, id: string | null = null) {
     log('info', 'memory.save.completed', { durationMs: Math.round(performance.now() - started), newPhotos: photos.length });
     return saved;
   } catch (error) {
-    log('error', 'memory.save.failed', { durationMs: Math.round(performance.now() - started), error: errorDetails(error) });
+    log('error', 'memory.save.failed', { durationMs: Math.round(performance.now() - started), error });
     throw error;
   } finally { repository.uploadInProgress = false; }
 }

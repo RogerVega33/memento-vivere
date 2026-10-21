@@ -3,7 +3,7 @@ import { LIMITS } from '../domain/memories.mjs';
 import { ValidationError } from '../domain/errors.mjs';
 import { PHOTO_FORMATS_LABEL } from '../domain/photos.mjs';
 import { decodeHeic, isHeic } from './decode-heic.mjs';
-import { errorDetails, log } from './logger.mjs';
+import { log } from './logger.mjs';
 
 const INVALID_PHOTO = `No se pudo procesar una fotografía. Utiliza una imagen ${PHOTO_FORMATS_LABEL} válida.`;
 
@@ -40,11 +40,11 @@ export async function optimizePhoto(input) {
       log('info', 'photo.optimize.completed', { durationMs: Math.round(performance.now() - started), outputBytes: data.byteLength, width: info.width, height: info.height, heic });
       return { data, width: info.width, height: info.height };
     } catch (error) {
-      log('error', 'photo.encode.failed', { error: errorDetails(error) });
+      log('error', 'photo.encode.failed', { error });
       throw new ValidationError(INVALID_PHOTO);
     }
   } catch (error) {
-    log('error', 'photo.optimize.failed', { durationMs: Math.round(performance.now() - started), error: errorDetails(error) });
+    log('error', 'photo.optimize.failed', { durationMs: Math.round(performance.now() - started), error });
     throw error;
   }
 }

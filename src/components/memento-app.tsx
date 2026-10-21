@@ -53,13 +53,12 @@ export function MementoApp() {
         void checkSession();
       };
     }
-    const interval = setInterval(sync, 15000);
     window.addEventListener('focus', sync);
     window.addEventListener('pageshow', sync);
     document.addEventListener('visibilitychange', sync);
     window.addEventListener('memento:session-expired', expired);
     return () => {
-      requests.cancel(); clearInterval(interval); channel.current?.close();
+      requests.cancel(); channel.current?.close();
       window.removeEventListener('focus', sync);
       window.removeEventListener('pageshow', sync);
       document.removeEventListener('visibilitychange', sync);
@@ -131,12 +130,10 @@ function LifeApp({ user, onLogout, signingOut, sessionError }: { user: User; onL
       if (document.visibilityState === 'visible')
         void refresh();
     }
-    const interval = setInterval(sync, 15000);
     window.addEventListener('focus', sync);
     document.addEventListener('visibilitychange', sync);
     return () => {
       requests.cancel();
-      clearInterval(interval);
       window.removeEventListener('focus', sync);
       document.removeEventListener('visibilitychange', sync);
     };

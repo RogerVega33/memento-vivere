@@ -17,17 +17,16 @@ export const cases = [
       }));
       const responses = await Promise.all(requests.map((request, index) => handle(async () => {
         await new Promise(resolve => setImmediate(resolve));
-        log('info', 'test.stage', { index });
+        log('info', 'memory.photo.started', { photoIndex: index + 1 });
         return json({ ok: true });
       }, request)));
       assert.notEqual(responses[0].headers.get('X-Request-Id'), responses[1].headers.get('X-Request-Id'));
       for (const [index, response] of responses.entries()) {
         const requestId = response.headers.get('X-Request-Id');
-        assert.equal(entries.find(entry => entry.event === 'test.stage' && entry.index === index).requestId, requestId);
+        assert.equal(entries.find(entry => entry.event === 'memory.photo.started' && entry.photoIndex === index + 1).requestId, requestId);
         const completed = entries.find(entry => entry.event === 'request.completed' && entry.requestId === requestId);
         assert.equal(completed.status, 200);
         assert.equal(typeof completed.durationMs, 'number');
-        assert.equal(typeof completed.rssMB, 'number');
       }
       assert.doesNotMatch(JSON.stringify(entries), /PRIVATE_/);
     } finally { logger.mock.restore(); }

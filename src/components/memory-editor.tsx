@@ -124,7 +124,7 @@ export function MemoryEditor({ memory, selectedMonth, birthDate, today, onClose,
           autoFocus
           required
           maxLength={LIMITS.titleLength}
-          placeholder="Ese día que no quiero olvidar…"
+          placeholder=""
           value={title}
           onChange={event => setTitle(event.target.value)}
         />

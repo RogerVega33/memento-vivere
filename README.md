@@ -76,6 +76,12 @@ Después de actualizar el código, ejecuta el mismo comando para reconstruir y a
 docker compose stop
 ```
 
+Para consultar los últimos 100 registros de la aplicación y seguir los nuevos en tiempo real:
+
+```bash
+docker compose logs -f --tail=100 app
+```
+
 ### HTTPS con proxy inverso
 
 Dirige el proxy al puerto de la aplicación (`3000` por defecto) y configura estas cabeceras, sobrescribiendo los valores enviados por el cliente:
