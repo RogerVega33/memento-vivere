@@ -1,5 +1,9 @@
 # Memento Vivere
 
+## Demo
+
+![Demo de Memento Vivere](docs/assets/demo.gif)
+
 ## ¿Qué es Memento Vivere?
 
 Memento Vivere es una aplicación de reflexión personal y registro autobiográfico que permite visualizar el paso del tiempo y conservar los recuerdos que dan significado a nuestra existencia.
