@@ -1,4 +1,4 @@
-FROM node:24-trixie-slim AS base
+FROM node:24.22.1-trixie-slim AS base
 RUN apt-get update && apt-get install -y --no-install-recommends heif-thumbnailer libheif-plugin-libde265 libheif-plugin-aomdec util-linux && rm -rf /var/lib/apt/lists/*
 
 FROM base AS dependencies
